@@ -10,6 +10,8 @@
       :products="products"
       @add-to-cart="handleAddToCart"
       :cart="cart"
+      :checkout-token="checkoutToken"
+      @confirm-order="handleConfirmOrder"
     />
   </div>
 </template>
@@ -27,6 +29,7 @@ export default {
       products: [],
       cart: null,
       checkoutToken: null,
+      order: null,
     }
   },
   created() {
@@ -111,18 +114,34 @@ export default {
         console.log('There was an error clearing your cart', error);
       });
     },
+    refreshCart() {
+      this.$commerce.cart.refresh().then((resp) => {
+        this.cart = resp.cart
+      }).catch((error) => {
+        console.log('There was an error refreshing your cart', error);  
+      });
+    },
     /**
      * Generates a checkout token
      * https://commercejs.com/docs/sdk/checkout#generate-token
      * 
-     * @param 
+     * @return {object} checkout token object
      */
     generateToken() {
-      this.$commerce.checkout.generateToken(this.cart.id, {type: 'cart'}).then((checkout) => {
-        this.checkoutToken = checkout;
+      this.$commerce.checkout.generateToken(this.cart.id, {type: 'cart'}).then((checkoutToken) => {
+        this.checkoutToken = checkoutToken;
       }).catch((error) => {
-        console.log('There was an error generating your checkout toekn', error);  
-      })
+        console.log('There was an error generating your checkout token', error);  
+      });
+    },
+    handleConfirmOrder(checkoutTokenId, order) {
+      this.$commerce.checkout.capture(checkoutTokenId, order).then((order) => {
+        this.refreshCart();
+        this.checkoutToken = null;
+        this.order = order;
+      }).catch((error) => {
+        console.log('There was an error confirming your order', error);  
+      });
     }
   }
 };

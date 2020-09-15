@@ -24,25 +24,25 @@
                 <label class="checkout__label" for="city">City</label>
                 <input class="checkout__input" type="text" v-model="form.shipping.city" name="city" placeholder="Enter your city" required />
 
-                <label class="checkout__label" for="postalZip">Postal/Zip Code</label>
-                <input class="checkout__input" type="text" v-model="form.shipping.postalZip" name="postalZip" placeholder="Enter your postal/zip code" required />
+                <label class="checkout__label" for="postalZipCode">Postal/Zip Code</label>
+                <input class="checkout__input" type="text" v-model="form.shipping.postalZipCode" name="postalZipCode" placeholder="Enter your postal/zip code" required />
 
-                <label class="checkout__label" for="postalZip">Country</label>
+                <label class="checkout__label" for="country">Country</label>
                 <select v-model="form.shipping.country" name="country" class="checkout__select">
                 <option value="" disabled>Country</option>
-                <option v-for="(country, index) of shippingCountries" :value="index" :key="index">{{country}}</option>
+                <option v-for="(country, index) of shippingCountries" :value="index" :key="index">{{ country }}</option>
                 </select>
                 
-                <label class="dcheckout__label" for="postalZip">Province/State</label>
-                <select v-model="form.shipping.provinceState" name="provinceState" class="checkout__select">
-                <option value="" disabled>Province/State</option>
+                <label class="checkout__label" for="stateProvince">Province/State</label>
+                <select v-model="form.shipping.stateProvince" name="provinceState" class="checkout__select">
+                <option class="checkout__option" value="" disabled>Province/State</option>
                 <option v-for="(subdivision, index) of shippingSubdivisions" :value="index" :key="index">{{subdivision}}</option>
                 </select>
 
-                <label class="checkout__label" for="city">Shipping Method</label>
-                <select v-model="form.fulfillment.shippingMethod" name="shippingMethod" class="checkout__select">
-                <option value="" disabled>Select a shipping method</option>
-                <option v-for="method of shippingMethods" :value="method.id" :key="method.id">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
+                <label class="checkout__label" for="selectedShippingOption">Shipping Method</label>
+                <select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
+                <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
+                <option class="checkout__select-option" v-for="method of shippingOptions" :value="method.id" :key="method.id">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
             </select>
 
             <h4 class="checkout__subheading">Payment Information</h4>
@@ -60,8 +60,11 @@
                 <input class="checkout__input" type="text" name="ccv" v-model="form.payment.ccv" placeholder="CCV (3 digits)" />
 
             <button class="checkout__btn-confirm" @click.prevent="confirmOrder()">Confirm Order</button>
-            
         </form>
+        <div>
+            <h4>Order Summary</h4>
+            <div>{{ cart }}</div>
+        </div>
     </div>
 </template>
 
@@ -80,56 +83,105 @@ export default {
                 shipping: {
                     name: 'Jane Doe',
                     street: '123 Fake St',
-                    city: 'Vancouver',
-                    stateProvince: 'BC',
-                    postalZipCode: 'V1A 2B3',
-                    country: 'CA',
+                    city: 'San Francisco',
+                    stateProvince: 'CA',
+                    postalZipCode: '94107',
+                    country: 'US',
                 },
                 fulfillment: {
-                    shippingMethod: '',
-                    shippingMethods: [],
-                    shippingMethodsId: {},
-                    shippingSubdivisions: {},
-                    shippingCountries: {},
+                    selectedShippingOption: '',
                 },
                 payment: {
                     cardNum: '4242 4242 4242 4242',
                     expMonth: '01',
                     expYear: '2023',
                     ccv: '123',
-                    billingPostalZip: 'V1A 2B3',
+                    billingPostalZipCode: '94107',
                 },
-            }
+            },
+            shippingOptions: [],
+            shippingSubdivisions: {},
+            shippingCountries: {},
         }
     },
     created() {
         this.fetchShippingCountries();
-        this.fetchProvinceState(this.country);
-        this.fetchShippingMethods(this.checkoutToken.id, this.country);
+        this.fetchStateProvince(this.form.shipping.country);
+    },
+    mounted() {
+        this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country);
     },
     methods: {
-        getShippingCountries(){
+        /**
+         * Fetches the countries available to ship to current checkout
+         * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
+         * 
+         * @returns
+         */
+        fetchShippingCountries(){
             this.$commerce.services.localeListShippingCountries(this.checkoutToken.id).then((resp) => {
                     this.shippingCountries = resp.countries
             }).catch((error) => {
                 console.log('There was an error fetching the shipping countries', error);
             });
         },
-        getProvinceState(){
-            this.commerce.services.localeListSubdivisions(this.country).then((resp) => 
+        /**
+         * Fetches the subdivisions (provinces/states) in a country which
+         * can be shipped to for the current checkout
+         * https://commercejs.com/docs/sdk/checkout#list-available-shipping-subdivisions
+         * 
+         * @returns
+         */
+        fetchStateProvince(){
+            this.$commerce.services.localeListSubdivisions(this.form.shipping.country).then((resp) => {
                 this.shippingSubdivisions = resp.subdivisions
-            )
-            .catch((error) => {
-            alert(error)
-            })
+
+            }).catch((error) => {
+                console.log('There was an error fetching the subdivisions', error);
+            });
         },
-        getShippingMethods(){
-            this.commerce.checkout.getShippingOptions(this.checkout.id, { country: 'CA', region: 'BC' }).then(response => this.shippingMethods = response
-            )
-            .catch((error) => {
-                alert(error)
-            })
+        /**
+         * Fetches the available shipping methods for the current checkout
+         */
+        fetchShippingOptions(){
+            this.$commerce.checkout.getShippingOptions(this.checkoutToken.id, { country: 'US', region: 'CA' }).then((resp) => {
+                this.shippingOptions = resp
+              }).catch((error) => {
+                console.log('There was an error fetching the shipping methods', error);
+            });
         },
+        confirmOrder(){
+            const confirmedOrder = {
+                line_items: this.checkoutToken.live.line_items,
+                customer: {
+                    firstname: this.customer.firstName,
+                    lastname: this.customer.lastName,
+                    email: this.customer.email
+                },
+                shipping: {
+                    name: this.shipping.name,
+                    street: this.shipping.street,
+                    town_city: this.shipping.city,
+                    county_state: this.shipping.stateProvince,
+                    postal_zip_code: this.postalZipCode,
+                    country: this.shipping.country,
+                },
+                fulfillment: {
+                    shipping_method: this.selectedShippingOption.id
+                },
+                payment: {
+                    gateway: "test_gateway",
+                    card: {
+                        number: this.payment.cardNum,
+                        expiry_month: this.payment.expMonth,
+                        expiry_year: this.payment.expYear,
+                        cvc: this.ccv,
+                        postal_zip_code: this.payment.billingPostalZipCode
+                    }
+                }
+            };
+            this.$emit('confirm-order', this.checkoutToken.id, confirmedOrder)
+        }
     }
 }
 </script>
@@ -137,11 +189,36 @@ export default {
 <style lang="scss">
 .checkout {
     &__form {
-        @apply bg-white border-2 border-blue w-1/2 p-5;
+        @apply bg-white border-2 border-blue w-3/5 p-5 m-12;
+    }
+
+    &__subheading {
+        @apply text-lg font-bold pt-4;
+    }
+
+    &__label {
+        @apply block text-xs font-bold text-blue uppercase pt-3;
     }
 
     &__input {
-        @apply border border-blue;
+        @apply border border-blue py-1 px-2 text-sm;
+    }
+
+    &__select {
+        @apply border border-blue py-1 px-2;
+
+        select > option {
+            @apply text-sm;
+        }
+    }
+
+    &__btn-confirm {
+       @apply bg-blue border border-blue pl-5 mx-5 mb-5 py-2 px-3 text-xs uppercase text-white font-bold;
+
+
+        &:hover {
+            background-color: lighten(#292B83, 10);
+        }
     }
 }
 

@@ -29,8 +29,8 @@ body {
   }
   
   h4 {
-    @apply text-xl;
-  }
+    @apply text-lg tracking-wider;
+ }
   
   h5 {
     @apply text-lg;
