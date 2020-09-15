@@ -6,32 +6,39 @@
       @remove-from-cart="handleRemoveFromCart"
       @empty-cart="handleEmptyCart"
     />
-    <ProductsList
+    <router-view
       :products="products"
       @add-to-cart="handleAddToCart"
+      :cart="cart"
     />
   </div>
 </template>
 
 <script>
-import ProductsList from './components/ProductsList';
 import Cart from './components/Cart';
 
 export default {
   name: 'app',
   components: {
-    ProductsList,
     Cart,
   },
   data() {
     return {
       products: [],
       cart: null,
+      checkoutToken: null,
     }
   },
   created() {
     this.fetchProducts();
     this.fetchCart();
+  },
+  watch: {
+    cart(newCart) {
+      if(newCart.line_items.length) {
+        this.generateToken();
+      }
+    },
   },
   methods: {
     /**
@@ -94,7 +101,7 @@ export default {
     /**
      * Empties cart contents
      * https://commercejs.com/docs/sdk/cart/#remove-from-cart
-   
+     * 
      * @return {object} updated cart object
      */ 
     handleEmptyCart() {
@@ -103,6 +110,19 @@ export default {
       }).catch((error) => {
         console.log('There was an error clearing your cart', error);
       });
+    },
+    /**
+     * Generates a checkout token
+     * https://commercejs.com/docs/sdk/checkout#generate-token
+     * 
+     * @param 
+     */
+    generateToken() {
+      this.$commerce.checkout.generateToken(this.cart.id, {type: 'cart'}).then((checkout) => {
+        this.checkoutToken = checkout;
+      }).catch((error) => {
+        console.log('There was an error generating your checkout toekn', error);  
+      })
     }
   }
 };

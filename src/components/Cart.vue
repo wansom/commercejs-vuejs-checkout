@@ -20,8 +20,23 @@
                     <p class="cart__total-price">{{ cart.subtotal.formatted_with_symbol }}</p>
                 </div>
             </div>
-            <button v-if="cart.line_items.length" @click="emptyCart()">Empty cart</button>
-            <p class="cart__none" v-else>You have no items in your shopping cart, start adding some!</p>
+            <div class="cart__footer">
+                <button
+                    v-if="cart.line_items.length"
+                    @click="emptyCart()"
+                    class="cart__btn-empty"
+                >
+                    Empty cart
+                </button>
+                <router-link
+                    v-if="cart.line_items.length"
+                    class="cart__btn-checkout"
+                    to="/checkout"
+                >
+                    Checkout
+                </router-link>
+                <p class="cart__none" v-else>You have no items in your shopping cart, start adding some!</p>
+            </div>
         </div>
     </div>
 </template>
@@ -60,6 +75,9 @@ export default {
         emptyCart() {
             this.$emit('empty-cart');
         },
+        checkout() {
+            this.$emit('checkout');
+        }
      }
 }
 </script>
@@ -91,6 +109,25 @@ export default {
 
     &__none {
         @apply p-5 text-blue text-center;
+    }
+
+    &__footer {
+        @apply flex;
+        justify-content: space-between;
+    }
+
+    &__btn-empty {
+        @apply bg-white border border-blue pl-5 mx-5 mb-5 py-2 px-3 text-xs uppercase text-blue font-bold;
+        align-self: flex-start;
+    }
+
+    &__btn-checkout {
+       @apply bg-blue border border-blue pl-5 mx-5 mb-5 py-2 px-3 text-xs uppercase text-white font-bold;
+
+
+        &:hover {
+            background-color: lighten(#292B83, 10);
+        }
     }
 }
 
