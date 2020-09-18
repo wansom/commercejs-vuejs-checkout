@@ -32,7 +32,7 @@
                 <option value="" disabled>Country</option>
                 <option v-for="(country, index) in countries" :value="index" :key="index">{{ country }}</option>
                 </select>
-                
+
                 <label class="checkout__label" for="stateProvince">State/Province</label>
                 <select v-model="form.shipping.stateProvince" name="stateProvince" class="checkout__select">
                 <option class="checkout__option" value="" disabled>State/Province</option>
@@ -70,7 +70,7 @@
 <script>
 export default {
     name: 'Checkout',
-    props: ['cart', 'checkoutToken'],
+    props: ['checkoutToken'],
     data() {
         return {
             form: {
@@ -130,7 +130,7 @@ export default {
          * Fetches the subdivisions (provinces/states) in a country which
          * can be shipped to for the current checkout
          * https://commercejs.com/docs/sdk/checkout#list-available-shipping-subdivisions
-         * 
+         *
          * @returns
          */
         fetchStateProvince(){
@@ -152,7 +152,7 @@ export default {
         },
         confirmOrder(){
             const orderData = {
-                // line_items: this.checkoutToken.live.line_items,
+                line_items: this.checkoutToken.live.line_items,
                 customer: {
                     firstname: this.form.customer.firstName,
                     lastname: this.form.customer.lastName,

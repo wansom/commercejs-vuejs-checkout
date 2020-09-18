@@ -9,7 +9,7 @@
             </div>
             <button
                 class="product__btn"
-                @click="addToCart()"
+                @click="addToCart"
             >
                 Quick add
             </button>
@@ -23,7 +23,7 @@ export default {
   props: ['product'],
   methods: {
       addToCart() {
-        this.$emit('add-to-cart', { productId: this.product.id, quantity: 1 });
+        this.$emit('add-to-cart', this.product.id, 1);
       }
   }
 
