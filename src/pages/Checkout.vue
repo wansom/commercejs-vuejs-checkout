@@ -30,19 +30,19 @@
                 <label class="checkout__label" for="country">Country</label>
                 <select v-model="form.shipping.country" name="country" class="checkout__select">
                 <option value="" disabled>Country</option>
-                <option v-for="(country, index) of shippingCountries" :value="index" :key="index">{{ country }}</option>
+                <option v-for="(country, index) in countries" :value="index" :key="index">{{ country }}</option>
                 </select>
                 
-                <label class="checkout__label" for="stateProvince">Province/State</label>
-                <select v-model="form.shipping.stateProvince" name="provinceState" class="checkout__select">
-                <option class="checkout__option" value="" disabled>Province/State</option>
-                <option v-for="(subdivision, index) of shippingSubdivisions" :value="index" :key="index">{{subdivision}}</option>
+                <label class="checkout__label" for="stateProvince">State/Province</label>
+                <select v-model="form.shipping.stateProvince" name="stateProvince" class="checkout__select">
+                <option class="checkout__option" value="" disabled>State/Province</option>
+                <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
                 </select>
 
                 <label class="checkout__label" for="selectedShippingOption">Shipping Method</label>
                 <select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
                 <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
-                <option class="checkout__select-option" v-for="method of shippingOptions" :value="method.id" :key="method.id">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
+                <option class="checkout__select-option" v-for="method in shippingOptions" :value="method.id" :key="method.id">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
             </select>
 
             <h4 class="checkout__subheading">Payment Information</h4>
@@ -59,11 +59,10 @@
                 <label class="checkout__label" for="ccv">CCV</label>
                 <input class="checkout__input" type="text" name="ccv" v-model="form.payment.ccv" placeholder="CCV (3 digits)" />
 
-            <button class="checkout__btn-confirm" @click.prevent="confirmOrder()">Confirm Order</button>
+            <button class="checkout__btn-confirm" @click.prevent="confirmOrder">Confirm Order</button>
         </form>
         <div>
             <h4>Order Summary</h4>
-            <div>{{ cart }}</div>
         </div>
     </div>
 </template>
@@ -71,7 +70,7 @@
 <script>
 export default {
     name: 'Checkout',
-    props: ['checkoutToken', 'cart'],
+    props: ['cart', 'checkoutToken'],
     data() {
         return {
             form: {
@@ -101,28 +100,30 @@ export default {
             },
             shippingOptions: [],
             shippingSubdivisions: {},
-            shippingCountries: {},
+            countries: {},
+            order: null
         }
     },
     created() {
-        this.fetchShippingCountries();
+        this.fetchAllCountries();
         this.fetchStateProvince(this.form.shipping.country);
     },
     mounted() {
+        if(this.checkoutToken == null) {
+            return;
+        }
         this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country);
     },
     methods: {
         /**
          * Fetches the countries available to ship to current checkout
          * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
-         * 
-         * @returns
          */
-        fetchShippingCountries(){
-            this.$commerce.services.localeListShippingCountries(this.checkoutToken.id).then((resp) => {
-                    this.shippingCountries = resp.countries
+        fetchAllCountries(){
+            this.$commerce.services.localeListCountries().then((countries) => {
+                this.countries = countries.countries
             }).catch((error) => {
-                console.log('There was an error fetching the shipping countries', error);
+                console.log('There was an error fetching a list of countries', error);
             });
         },
         /**
@@ -135,7 +136,6 @@ export default {
         fetchStateProvince(){
             this.$commerce.services.localeListSubdivisions(this.form.shipping.country).then((resp) => {
                 this.shippingSubdivisions = resp.subdivisions
-
             }).catch((error) => {
                 console.log('There was an error fetching the subdivisions', error);
             });
@@ -144,43 +144,43 @@ export default {
          * Fetches the available shipping methods for the current checkout
          */
         fetchShippingOptions(){
-            this.$commerce.checkout.getShippingOptions(this.checkoutToken.id, { country: 'US', region: 'CA' }).then((resp) => {
-                this.shippingOptions = resp
+            this.$commerce.checkout.getShippingOptions(this.checkoutToken.id, { country: 'US', region: 'CA' }).then((options) => {
+                this.shippingOptions = options;
               }).catch((error) => {
                 console.log('There was an error fetching the shipping methods', error);
             });
         },
         confirmOrder(){
-            const confirmedOrder = {
-                line_items: this.checkoutToken.live.line_items,
+            const orderData = {
+                // line_items: this.checkoutToken.live.line_items,
                 customer: {
-                    firstname: this.customer.firstName,
-                    lastname: this.customer.lastName,
-                    email: this.customer.email
+                    firstname: this.form.customer.firstName,
+                    lastname: this.form.customer.lastName,
+                    email: this.form.customer.email
                 },
                 shipping: {
-                    name: this.shipping.name,
-                    street: this.shipping.street,
-                    town_city: this.shipping.city,
-                    county_state: this.shipping.stateProvince,
-                    postal_zip_code: this.postalZipCode,
-                    country: this.shipping.country,
+                    name: this.form.shipping.name,
+                    street: this.form.shipping.street,
+                    town_city: this.form.shipping.city,
+                    county_state: this.form.shipping.stateProvince,
+                    postal_zip_code: this.form.shipping.postalZipCode,
+                    country: this.form.shipping.country,
                 },
                 fulfillment: {
-                    shipping_method: this.selectedShippingOption.id
+                    shipping_method: this.form.fulfillment.selectedShippingOption
                 },
                 payment: {
                     gateway: "test_gateway",
                     card: {
-                        number: this.payment.cardNum,
-                        expiry_month: this.payment.expMonth,
-                        expiry_year: this.payment.expYear,
-                        cvc: this.ccv,
-                        postal_zip_code: this.payment.billingPostalZipCode
+                        number: this.form.payment.cardNum,
+                        expiry_month: this.form.payment.expMonth,
+                        expiry_year: this.form.payment.expYear,
+                        cvc: this.form.payment.ccv,
+                        postal_zip_code: this.form.payment.billingPostalZipCode
                     }
                 }
             };
-            this.$emit('confirm-order', this.checkoutToken.id, confirmedOrder)
+            this.$emit('confirm-order', this.checkoutToken.id, orderData);
         }
     }
 }

@@ -11,9 +11,14 @@ const routes = [
     },
     {
         path: '/checkout',
-        name: 'checkout',
+        name: 'Checkout',
         component: () => import('../pages/Checkout.vue')
-    }, 
+    },
+    {
+        path: '/confirmation',
+        name: 'Confirmation',
+        component: () => import('../pages/Confirmation.vue')
+    },
 ]
 
 const router = new VueRouter({ routes, mode: 'history' });

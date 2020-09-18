@@ -2,7 +2,6 @@
   <div>
     <Cart
       :cart="cart"
-      :showCart="showCart"
       @remove-from-cart="handleRemoveFromCart"
       @empty-cart="handleEmptyCart"
     />
@@ -10,8 +9,9 @@
       :products="products"
       @add-to-cart="handleAddToCart"
       :cart="cart"
-      :checkout-token="checkoutToken"
       @confirm-order="handleConfirmOrder"
+      :checkout-token="checkoutToken"
+      :order="order"
     />
   </div>
 </template>
@@ -28,8 +28,8 @@ export default {
     return {
       products: [],
       cart: null,
-      checkoutToken: null,
       order: null,
+      checkoutToken: null,
     }
   },
   created() {
@@ -37,9 +37,9 @@ export default {
     this.fetchCart();
   },
   watch: {
-    cart(newCart) {
-      if(newCart.line_items.length) {
-        this.generateToken();
+    cart() {
+      if (this.cart.line_items.length) {
+        this.generateCheckoutToken();
       }
     },
   },
@@ -74,10 +74,9 @@ export default {
      * Adds a product to the current cart in session
      * https://commercejs.com/docs/sdk/cart/#add-to-cart
      * 
-     * @param {string} id of the product being added
-     * @param {number} quantity of the product being added 
-     * 
-     * @return {object} updated cart object with new line items
+     * @param {object} arguments 
+     * @param {string} arguments.productId The ID of the product being added
+     * @param {number} arguments.quantity The quantity of the product being added 
      */ 
     handleAddToCart({ productId, quantity }) {
       this.$commerce.cart.add(productId, quantity).then((resp) => {
@@ -90,9 +89,8 @@ export default {
      * Removes line item from cart
      * https://commercejs.com/docs/sdk/cart/#remove-from-cart
      * 
-     * @param {string} id of the cart line item being removed
-     * 
-     * @return {object} updated cart object
+     * @param {string} lineItemId ID of the line item being removed
+     *
      */ 
     handleRemoveFromCart(lineItemId) {
       this.$commerce.cart.remove(lineItemId).then((resp) => {
@@ -104,8 +102,6 @@ export default {
     /**
      * Empties cart contents
      * https://commercejs.com/docs/sdk/cart/#remove-from-cart
-     * 
-     * @return {object} updated cart object
      */ 
     handleEmptyCart() {
       this.$commerce.cart.empty().then((resp) => {
@@ -114,6 +110,10 @@ export default {
         console.log('There was an error clearing your cart', error);
       });
     },
+    /**
+     * Empties cart contents
+     * https://commercejs.com/docs/sdk/cart/#remove-from-cart
+     */ 
     refreshCart() {
       this.$commerce.cart.refresh().then((resp) => {
         this.cart = resp.cart
@@ -121,26 +121,23 @@ export default {
         console.log('There was an error refreshing your cart', error);  
       });
     },
-    /**
-     * Generates a checkout token
-     * https://commercejs.com/docs/sdk/checkout#generate-token
-     * 
-     * @return {object} checkout token object
-     */
-    generateToken() {
-      this.$commerce.checkout.generateToken(this.cart.id, {type: 'cart'}).then((checkoutToken) => {
-        this.checkoutToken = checkoutToken;
+    generateCheckoutToken() {
+      this.$commerce.checkout.generateToken(
+        this.cart.id,
+        { type: 'cart' },
+      ).then((token) => {
+        this.checkoutToken = token;
       }).catch((error) => {
-        console.log('There was an error generating your checkout token', error);  
+        console.log(error);
       });
     },
-    handleConfirmOrder(checkoutTokenId, order) {
-      this.$commerce.checkout.capture(checkoutTokenId, order).then((order) => {
+    handleConfirmOrder(checkoutTokenId, newOrder) {
+      this.$commerce.checkout.capture(checkoutTokenId, newOrder).then((order) => {
         this.refreshCart();
-        this.checkoutToken = null;
         this.order = order;
+        this.$router.push('/confirmation');
       }).catch((error) => {
-        console.log('There was an error confirming your order', error);  
+          console.log('There was an error confirming your order', error);  
       });
     }
   }

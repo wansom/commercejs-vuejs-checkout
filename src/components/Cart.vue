@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div @click="showCart = !showCart">
+        <div @click="toggleCart()">
             <button v-if="!showCart">Cart <span v-if="cart.line_items.length">{{cart.total_items}}</span></button>
             <button v-else>Close</button>
         </div>
@@ -23,7 +23,7 @@
             <div class="cart__footer">
                 <button
                     v-if="cart.line_items.length"
-                    @click="emptyCart()"
+                    @click="emptyCart"
                     class="cart__btn-empty"
                 >
                     Empty cart
@@ -32,6 +32,7 @@
                     v-if="cart.line_items.length"
                     class="cart__btn-checkout"
                     to="/checkout"
+                    @click="!toggleCart"
                 >
                     Checkout
                 </router-link>
@@ -60,10 +61,8 @@ export default {
          * Updates line_items in cart
          * https://commercejs.com/docs/sdk/cart/#update-cart
          * 
-         * @param {string} id of the cart line item being updated
-         * @param {number} new line item quantity to update
-         * 
-         * @return {object} updated cart object
+         * @param {string} lineItemId ID of the cart line item being updated
+         * @param {number} quantity New line item quantity to update
          */ 
         handleUpdateQuantity(lineItemId, quantity) {
             this.$commerce.cart.update(lineItemId, { quantity }).then((resp) => {
@@ -72,13 +71,20 @@ export default {
                 console.log('There was an error updating the cart items', error);
             });
         },
+        /**
+         * Empty the entire cart
+         * https://commercejs.com/docs/sdk/cart#empty-cart
+         */
         emptyCart() {
             this.$emit('empty-cart');
         },
-        checkout() {
-            this.$emit('checkout');
+        /**
+         * Toggles the cart
+         */
+        toggleCart() {
+            this.showCart = !this.showCart;
         }
-     }
+    }
 }
 </script>
 
