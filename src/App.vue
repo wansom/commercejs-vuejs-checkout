@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="nav">
+    <div class="nav" v-if="isNavVisible">
       <div
         @click="toggleCart()"
         role="button"
@@ -21,17 +21,18 @@
       :cart="cart"
       @remove-from-cart="handleRemoveFromCart"
       @empty-cart="handleEmptyCart"
-      @checkout="closeCart"
+      @checkout="handleNavigateTocheckout"
     />
     <router-view
       :products="products"
       @add-to-cart="handleAddToCart"
-      @confirm-order="handleConfirmOrder"
+      :cart="cart"
       :checkout-token="checkoutToken"
+      @confirm-order="handleConfirmOrder"
       :order="order"
     />
   </div>
-</template>
+</template>I
 
 <script>
 import Cart from './components/Cart';
@@ -50,6 +51,7 @@ export default {
       products: [],
       cart: {},
       isCartVisible: false,
+      isNavVisible: true,
       checkoutToken: null,
       order: null,
     };
@@ -88,7 +90,8 @@ export default {
     /**
      * Close cart when routing to checkout
      */
-    closeCart() {
+    handleNavigateTocheckout() {
+      this.$router.push('/checkout')
       this.isCartVisible = false;
     },
     /**
@@ -177,6 +180,7 @@ export default {
         this.refreshCart();
         this.order = order;
         this.$router.push('/confirmation');
+        this.isNavVisible = false;
       }).catch((error) => {
           console.log('There was an error confirming your order', error);
       });

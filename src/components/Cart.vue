@@ -23,14 +23,13 @@
       >
         Empty cart
       </button>
-      <router-link
+      <button
         v-if="cart.line_items.length"
         class="cart__btn-checkout"
-        to="/checkout"
-        @click="checkout"
+        @click="checkout()"
       >
         Checkout
-      </router-link>
+      </button>
       <p class="cart__none" v-else>You have no items in your shopping cart, start adding some!</p>
     </div>
   </div>
