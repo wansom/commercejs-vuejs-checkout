@@ -1,9 +1,27 @@
 <template>
   <div>
+    <div class="nav">
+      <div
+        @click="toggleCart()"
+        role="button"
+        tabindex="0"
+        class="nav__cart"
+      >
+        <button v-if="!isCartVisible" class="nav__cart-open">
+          <font-awesome-icon size="2x" icon="shopping-bag" color="#292B83"/>
+          <span v-if="cart !== null">{{ cart.total_items }}</span>
+        </button>
+        <button class="nav__cart-close" v-else>
+          <font-awesome-icon size="1x" icon="times" color="white"/>
+        </button>
+      </div>
+    </div>
     <Cart
+      v-if="isCartVisible"
       :cart="cart"
       @remove-from-cart="handleRemoveFromCart"
       @empty-cart="handleEmptyCart"
+      @checkout="closeCart"
     />
     <router-view
       :products="products"
@@ -17,6 +35,10 @@
 
 <script>
 import Cart from './components/Cart';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faShoppingBag, faTimes } from '@fortawesome/free-solid-svg-icons';
+
+library.add(faShoppingBag, faTimes);
 
 export default {
   name: 'app',
@@ -27,6 +49,7 @@ export default {
     return {
       products: [],
       cart: {},
+      isCartVisible: false,
       checkoutToken: null,
       order: null,
     };
@@ -57,6 +80,18 @@ export default {
       });
     },
     /**
+     * Toggles the cart
+     */
+    toggleCart() {
+      this.isCartVisible = !this.isCartVisible;
+    },
+    /**
+     * Close cart when routing to checkout
+     */
+    closeCart() {
+      this.isCartVisible = false;
+    },
+    /**
      * Retrieve the current cart or create one if one does not exist
      * https://commercejs.com/docs/sdk/cart
      *
@@ -77,8 +112,8 @@ export default {
      * @param {number} quantity The quantity of the product being added
      */
     handleAddToCart(productId, quantity) {
-      this.$commerce.cart.add(productId, quantity).then((resp) => {
-        this.cart = resp.cart;
+      this.$commerce.cart.add(productId, quantity).then((item) => {
+        this.cart = item.cart;
       }).catch((error) => {
         console.log('There was an error fetching the cart', error);
       });
@@ -149,3 +184,22 @@ export default {
   }
 };
 </script>
+
+<style lang="scss">
+.nav {
+  @apply fixed;
+  top: 1rem;
+  right: 1.25rem;
+  z-index: 999;
+
+  &__cart {
+    span {
+      @apply text-sm font-bold bg-orange text-white py-0 px-1 -ml-2 rounded-full align-top;
+    }
+  }
+
+  &__cart-close {
+    @apply bg-blue text-white py-0 px-1 -ml-2 -mt-3 -mr-3 rounded-full align-top h-8 w-8;
+  }
+}
+</style>

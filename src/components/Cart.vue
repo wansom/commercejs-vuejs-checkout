@@ -1,42 +1,37 @@
 <template>
-  <div>
-    <div @click="toggleCart()" role="button" tabindex="0">
-      <button v-if="!showCart">Cart <span v-if="cart !== null">{{ cart.total_items }}</span></button>
-      <button v-else>Close</button>
+  <div class="cart">
+    <h5 class="cart__heading">Your shopping cart</h5>
+    <div v-if="cart.line_items.length">
+      <CartItem
+        v-for="lineItem in cart.line_items"
+        :key="lineItem.id"
+        :item="lineItem"
+        @update-quantity="handleUpdateQuantity"
+        @remove-from-cart="$emit('remove-from-cart', $event)"
+        class="cart__inner"
+      />
+      <div class="cart__total">
+        <p class="cart__total-title">Subtotal:</p>
+        <p class="cart__total-price">{{ cart.subtotal.formatted_with_symbol }}</p>
+      </div>
     </div>
-    <div class="cart" v-if="showCart">
-      <h5 class="cart__heading">Your shopping cart</h5>
-      <div v-if="cart.line_items.length">
-        <CartItem
-          v-for="lineItem in cart.line_items"
-          :key="lineItem.id"
-          :item="lineItem"
-          @update-quantity="handleUpdateQuantity"
-          @remove-from-cart="$emit('remove-from-cart', $event)"
-          class="cart__inner"
-        />
-        <div class="cart__total">
-          <p class="cart__total-title">Subtotal:</p>
-          <p class="cart__total-price">{{ cart.subtotal.formatted_with_symbol }}</p>
-        </div>
-      </div>
-      <div class="cart__footer">
-        <button
-          v-if="cart.line_items.length"
-          @click="emptyCart"
-          class="cart__btn-empty"
-        >
-          Empty cart
-        </button>
-        <router-link
-          v-if="cart.line_items.length"
-          class="cart__btn-checkout"
-          to="/checkout"
-        >
-          Checkout
-        </router-link>
-        <p class="cart__none" v-else>You have no items in your shopping cart, start adding some!</p>
-      </div>
+    <div class="cart__footer">
+      <button
+        v-if="cart.line_items.length"
+        @click="emptyCart"
+        class="cart__btn-empty"
+      >
+        Empty cart
+      </button>
+      <router-link
+        v-if="cart.line_items.length"
+        class="cart__btn-checkout"
+        to="/checkout"
+        @click="checkout"
+      >
+        Checkout
+      </router-link>
+      <p class="cart__none" v-else>You have no items in your shopping cart, start adding some!</p>
     </div>
   </div>
 </template>
@@ -50,11 +45,6 @@ export default {
     CartItem,
   },
   props: ['cart'],
-  data() {
-    return {
-      showCart: false,
-    }
-  },
   methods: {
     /**
      * Updates line_items in cart
@@ -78,22 +68,22 @@ export default {
       this.$emit('empty-cart');
     },
     /**
-     * Toggles the cart
+     * Navigate to checkout and close cart
      */
-    toggleCart() {
-      this.showCart = !this.showCart;
-    }
+    checkout() {
+      this.$emit('checkout');
+    },
   }
 }
 </script>
 
 <style lang="scss">
 .cart {
-  @apply bg-white border-2 border-blue;
+  @apply bg-white border-2 border-blue fixed;
+  z-index: 1;
   width: 350px;
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 1rem;
+  right: 1.25rem;
 
   &__heading {
     @apply py-3 px-4 font-bold border-b-2 border-blue text-blue;
