@@ -8,6 +8,7 @@
             <p class="product__price">{{ product.price.formatted_with_symbol }}</p>
             <button
                 class="product__btn"
+                type="button"
                 @click="addToCart"
             >
                 Quick add
