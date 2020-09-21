@@ -7,7 +7,7 @@
           <span>Order ref:</span> {{ order.customer_reference }}
         </h4>
       </div>
-      <button @click="backToHome()" class="confirmation__wrapper-back">
+      <button class="confirmation__wrapper-back" type="button" @click="backToHome">
         <font-awesome-icon size="1x" icon="arrow-left" color="#292B83"/>
         <span>Back to home</span>
       </button>
