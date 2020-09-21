@@ -2,10 +2,10 @@
   <div class="products">
     <ProductItem
       v-for="product in products"
+      class="products__item"
       :key="product.id"
       :product="product"
       @add-to-cart="$emit('add-to-cart', $event)"
-      class="products__item"
     />
   </div>
 </template>
