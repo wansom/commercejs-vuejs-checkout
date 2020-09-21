@@ -2,10 +2,10 @@
   <div>
     <div class="nav" v-if="isNavVisible">
       <div
-        @click="toggleCart()"
         role="button"
         tabindex="0"
         class="nav__cart"
+        @click="toggleCart"
       >
         <button v-if="!isCartVisible" class="nav__cart-open">
           <font-awesome-icon size="2x" icon="shopping-bag" color="#292B83"/>
@@ -28,12 +28,12 @@
     />
     <router-view
       :products="products"
-      @add-to-cart="handleAddToCart"
       :cart="cart"
       :checkout-token="checkoutToken"
-      @confirm-order="handleConfirmOrder"
       :order="order"
+      @add-to-cart="handleAddToCart"
       @back-to-home="handleBackToHome"
+      @confirm-order="handleConfirmOrder"
     />
   </div>
 </template>I
@@ -86,8 +86,6 @@ export default {
     /**
      * Fetch products data from Chec and stores in the products data object.
      * https://commercejs.com/docs/sdk/products
-     *
-     * @return {object} products data object
      */
     fetchProducts() {
       this.$commerce.products.list().then((products) => {
@@ -112,8 +110,6 @@ export default {
     /**
      * Retrieve the current cart or create one if one does not exist
      * https://commercejs.com/docs/sdk/cart
-     *
-     * @return {object} cart object
      */
     fetchCart() {
       this.$commerce.cart.retrieve().then((cart) => {
@@ -177,7 +173,7 @@ export default {
      * https://commercejs.com/docs/sdk/checkout#generate-token
      */
     generateCheckoutToken() {
-      this.$commerce.checkout.generateToken( this.cart.id, { type: 'cart' } ).then((token) => {
+      this.$commerce.checkout.generateToken(this.cart.id, { type: 'cart' }).then((token) => {
         this.checkoutToken = token;
       }).catch((error) => {
         console.log('There was an error in generating a token', error);
