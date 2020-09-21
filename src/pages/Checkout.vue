@@ -30,21 +30,21 @@
 
               <label class="checkout__label" for="country">Country</label>
               <select v-model="form.shipping.country" name="country" class="checkout__select">
-              <option value="" disabled>Country</option>
-              <option v-for="(country, index) in countries" :value="index" :key="index">{{ country }}</option>
+                <option value="" disabled>Country</option>
+                <option v-for="(country, index) in countries" :value="index" :key="index">{{ country }}</option>
               </select>
 
               <label class="checkout__label" for="stateProvince">State/Province</label>
               <select v-model="form.shipping.stateProvince" name="stateProvince" class="checkout__select">
-              <option class="checkout__option" value="" disabled>State/Province</option>
-              <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
+                <option class="checkout__option" value="" disabled>State/Province</option>
+                <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
               </select>
 
               <label class="checkout__label" for="selectedShippingOption">Shipping Method</label>
               <select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
-              <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
-              <option class="checkout__select-option" v-for="(method, index) in shippingOptions" :value="method.id" :key="index">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
-          </select>
+                <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
+                <option class="checkout__select-option" v-for="(method, index) in shippingOptions" :value="method.id" :key="index">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
+              </select>
 
           <h4 class="checkout__subheading">Payment Information</h4>
 
@@ -60,7 +60,7 @@
               <label class="checkout__label" for="ccv">CCV</label>
               <input class="checkout__input" type="text" name="ccv" v-model="form.payment.ccv" placeholder="CCV (3 digits)" />
 
-          <button class="checkout__btn-confirm" @click.prevent="confirmOrder">
+          <button class="checkout__btn-confirm" @click.prevent="confirmOrder()">
             {{ loading ? 'Loading...' : 'Confirm Order' }}
           </button>
       </form>
@@ -124,9 +124,9 @@ export default {
             },
             loading: false,
             liveObject: {},
-            shippingOptions: [],
-            shippingSubdivisions: {},
             countries: {},
+            shippingSubdivisions: {},
+            shippingOptions: [],
         }
     },
     created() {
@@ -139,6 +139,16 @@ export default {
         }
         this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
         this.getLiveObject(this.checkoutToken.id);
+    },
+    watch: {
+      setSelectedShippingOption() {
+        this.validateShippingOption(this.form.fulfillment.selectedShippingOption, this.form.shipping)
+      }
+    },
+    computed: {
+      setSelectedShippingOption() {
+        return this.form.fulfillment.selectedShippingOption;
+      },
     },
     methods: {
         /**
@@ -177,9 +187,10 @@ export default {
         },
         /**
          * Fetches the available shipping methods for the current checkout
+         * https://commercejs.com/docs/sdk/checkout#get-shipping-methods
          */
-        fetchShippingOptions(checkoutToken, country, stateProvince){
-          this.$commerce.checkout.getShippingOptions(checkoutToken,
+        fetchShippingOptions(checkoutTokenId, country, stateProvince){
+          this.$commerce.checkout.getShippingOptions(checkoutTokenId,
             { country: country, region: stateProvince }).then((options) => {
               this.shippingOptions = options;
             }).catch((error) => {
@@ -195,15 +206,12 @@ export default {
             shipping_option_id: shippingOptionId,
             country: this.form.shipping.country,
             region: this.form.shipping.stateProvince
-          }).then((shippingOption) => {
-            this.fulfillment.selectedShippingOption = shippingOption.id;
-            this.getLiveObject();
+          }).then((resp) => {
+            this.fulfillment.selectedShippingOption = resp.id;
+            this.liveObject = resp.live;
           }).catch((error) => {
             console.log('There was an error setting the shipping option', error);
           })
-        },
-        setSelectedShippingOption() {
-          this.validateShippingOption(this.form.fulfillment.selectedShippingOption);
         },
         /**
          * Emits order data to capture the order

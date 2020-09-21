@@ -36,7 +36,8 @@ This project assumes you have some knowledge of the below concepts before starti
 
 - The purpose of this guide is to focus on the Commerce.js layer and using Vue.js to build out the application
   therefore, we will not be going over any styling details.
-- The checkout application code is available in the GitHub repo along with all styling details.
+- We will not be going over any fontawesome usage
+- We will not be going over any UI details that do not pertain much to Commerce.js methods
 
 ## Checkout
 
@@ -445,6 +446,7 @@ data() {
     shippingOptions: [],
     shippingSubdivisions: {},
     countries: {},
+    loading: false,
   }
 ```
 
@@ -585,7 +587,7 @@ fetchAllCountries(){
 
 The response will be stored in the countries object we initialized earlier in our data object. We will then be able to use this countries object to iterate and display a list of countries in a select element later. The `fetchStateProvince()` function below will walk through the same pattern as well.
 
-A country code argument is required to make a request with [`commerce.services.localeListSubdivisions()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-subdivisions-for-a-country)
+A country code argument is required to make a request with [`commerce.services.localeListSubdivisions()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-subdivisions-for-a-country) to `GET v1/services/locale/{country_code}/subdivisions` to get a list of all subdivisions for that particular country.
 
 ```js
 /**
@@ -602,13 +604,18 @@ fetchStateProvince(){
 },
 ```
 
+With a successful request, the response will be stored in the `this.shippingSubdivions` array and will be used to iterate and output onto a select element in our template later on.
+
+For our next checkout helper function, we will fetch the current shipping options available in our merchant account. This function will fetch all the shipping options that were registered in the dashboard and enabled at the product level using the [`commerce.checkout.getShippingOptions()`](https://commercejs.com/docs/sdk/checkout#get-shipping-methods) method. This function takes in two required parameters - the `checkoutTokenId`, the country code for the provide `country` in our data, and the `region` is optional.
+
+
 ```js
 /**
  * Fetches the available shipping methods for the current checkout
  * https://commercejs.com/docs/sdk/checkout#get-shipping-methods
  */
-fetchShippingOptions(checkoutToken, country, stateProvince){
-  this.$commerce.checkout.getShippingOptions(checkoutToken,
+fetchShippingOptions(checkoutTokenId, country, stateProvince){
+  this.$commerce.checkout.getShippingOptions(checkoutTokenId,
     { country: country, region: stateProvince }).then((options) => {
       this.shippingOptions = options;
     }).catch((error) => {
@@ -616,6 +623,12 @@ fetchShippingOptions(checkoutToken, country, stateProvince){
   });
 },
 ```
+
+When the promise resolves, the response will be stored into `this.shippingOptions` which we will then later use to render a list of shipping options in our template.
+
+Our last checkout helper we will be adding before we start to hook up the data in our template, will be the [`commerce.checkout.checkShippingOption()`](https://commercejs.com/docs/api/?javascript--cjs#check-shipping-method) method. This method helps to validate the shipping option selected for the provided checkout token and applies it to the live object to then send along with an order.
+
+First, we create a function called `validateShippingOption()` and call the `commerce.checkout.checkShippingOption()` method. This function takes in the `checkoutToken.id`, and shipping details object with the `shippingOptionId`, the `country` and the `region` data. When the promise resolves, we will update `fulfillment.selectedShippingOption` with the `shippingOptionId` as well as the `liveObject` will be updated.
 
 ```js
 /**
@@ -627,25 +640,200 @@ validateShippingOption(shippingOptionId) {
     shipping_option_id: shippingOptionId,
     country: this.form.shipping.country,
     region: this.form.shipping.stateProvince
-  }).then((shippingOption) => {
-    this.fulfillment.selectedShippingOption = shippingOption.id;
-    this.getLiveObject();
+  }).then((resp) => {
+    this.fulfillment.selectedShippingOption = resp.id;
+    this.liveObject = resp.live;
   }).catch((error) => {
     console.log('There was an error setting the shipping option', error);
   })
 },
 ```
+With a successful request, the live object will be returned along with the payload. An abbreviated response will look like the below json data:
+
+```json
+{
+  "merchant_id": 18462,
+  "currency": {
+    "code": "USD",
+    "symbol": "$"
+  },
+  "line_items": [
+    {
+      "id": "item_7RyWOwmK5nEa2V",
+      "product_id": "prod_8XO3wpDrOwYAzQ",
+      "product_name": "Coffee",
+      "type": "standard",
+      "sku": null,
+      "quantity": 1,
+      "price": {
+        "raw": 7.5,
+        "formatted": "7.50",
+        "formatted_with_symbol": "$7.50",
+        "formatted_with_code": "7.50 USD"
+      },
+      "line_total": {
+        "raw": 7.5,
+        "formatted": "7.50",
+        "formatted_with_symbol": "$7.50",
+        "formatted_with_code": "7.50 USD"
+      },
+      "variants": [],
+      "tax": {
+        "is_taxable": false,
+        "taxable_amount": null,
+        "amount": null,
+        "breakdown": null
+      }
+    }
+  ],
+  "subtotal": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+  "discount": [],
+  "shipping": {
+    "available_options": [
+      {
+        "id": "ship_kpnNwAjO9omXB3",
+        "description": "International",
+        "price": {
+          "raw": 5,
+          "formatted": "5.00",
+          "formatted_with_symbol": "$5.00",
+          "formatted_with_code": "5.00 USD"
+        },
+      }
+    ],
+    "price": {
+      "raw": 0,
+      "formatted": "0.00",
+      "formatted_with_symbol": "$0.00",
+      "formatted_with_code": "0.00 USD"
+    }
+  },
+  "tax": {
+    "amount": {
+      "raw": 0,
+      "formatted": "0.00",
+      "formatted_with_symbol": "$0.00",
+      "formatted_with_code": "0.00 USD"
+    }
+  },
+  "total": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+  "total_with_tax": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+  "total_due": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+}
+```
+
+Alright, that wraps up all the checkout helper functions we will create for our checkout page. Now it's time to execute and hook up the responses to our template. Let's get right to it!
+
+Let's start with calling our `getLiveObject` when the component mounts:
+
+```js
+mounted() {
+  if(this.checkoutToken == null) {
+    return;
+  }
+  this.getLiveObject(this.checkoutToken.id);
+},
+```
+
+In the `mounted()` lifecycle hook, we first check that the `checkoutToken` exists before we call the `getLiveObject` with the `checkoutToken.id` passed in as an argument.
+
+Next, we will also call both the `fetchAllCountries()` and `fetchStateProvince()` functions when component is created. This ensures that we have our data ready to use when we render our select options in our template later.
+
+```js
+created() {
+  this.fetchAllCountries();
+  this.fetchStateProvince(this.form.shipping.country);
+},
+```
+
+In the same vein, we will also need to call the `fetchShippingOptions()` function to display the list of shipping options we have available. Let's add `this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince)` in the mounted hook after calling `this.getLiveObject(this.checkoutToken.id)`:
+
+```js
+mounted() {
+  if(this.checkoutToken == null) {
+      return;
+  }
+  this.getLiveObject(this.checkoutToken.id);
+  this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
+}
+```
+
+Lastly, let's create a couple of `watch` and `computed` properties to handle validating our shipping option and setting the selected shipping option.
+
+```js
+watch: {
+  setSelectedShippingOption() {
+    this.validateShippingOption(this.form.fulfillment.selectedShippingOption, this.form.shipping)
+  }
+},
+computed: {
+  setSelectedShippingOption() {
+    return this.form.fulfillment.selectedShippingOption;
+  },
+```
+
+We will now need to bind all the data responses to the shipping form fields. In the shipping section of the template we create earlier on, place all the markup underneath the **Postal/Zip code** input field:
+
+```html
+  <label class="checkout__label" for="country">Country</label>
+  <select v-model="form.shipping.country" name="country" class="checkout__select">
+    <option value="" disabled>Country</option>
+    <option v-for="(country, index) in countries" :value="index" :key="index">{{ country }}</option>
+  </select>
+
+  <label class="checkout__label" for="stateProvince">State/Province</label>
+  <select v-model="form.shipping.stateProvince" name="stateProvince" class="checkout__select">
+    <option class="checkout__option" value="" disabled>State/Province</option>
+    <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
+  </select>
+
+  <label class="checkout__label" for="selectedShippingOption">Shipping Method</label>
+  <select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
+    <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
+    <option class="checkout__select-option" v-for="(method, index) in shippingOptions" :value="method.id" :key="index">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
+  </select>
+```
+The three fields we just added: 
+- Binds the `form.shipping.country` as the selected country and loops through the `shippingSubdivisions` array to render as options
+- Binds the `form.shipping.stateProvince` as the selected state and iterates through the `countries` object to display the available list of countries
+- Binds the `form.fulfillment.selectedShippingOption` and loops through the `shippingOptions` array to render as options in the **Shipping Method** field.
+
+Once all the data is bounded to the field, we are then able to collect the neccessary data to send to an order object.
 
 ### 4. Capture order
+
+With all the data collected, we'll now need to associate it to each of the order properties in an appropriate data structure to be able to confirm the order.
+
+Let's create a `confirmOrder()` function and structure out our returned data. Have a look at the [expected structure here](https://commercejs.com/docs/sdk/checkout#capture-order) to send an order request.
 
 ```js
 confirmOrder() {
   const orderData = {
       line_items: this.checkoutToken.live.line_items,
       customer: {
-      firstname: this.form.customer.firstName,
-      lastname: this.form.customer.lastName,
-      email: this.form.customer.email
+        firstname: this.form.customer.firstName,
+        lastname: this.form.customer.lastName,
+        email: this.form.customer.email
     },
     shipping: {
       name: this.form.shipping.name,
@@ -669,9 +857,22 @@ confirmOrder() {
       }
     }
   };
+  this.loading = true;
   this.$emit('confirm-order', this.checkoutToken.id, orderData);
 }
 ```
+
+Follow the exact structure of the data we intend to send and emit the object along with the required `checkoutToken.id`. Note that first we are setting the `loading` to true while the order request will be resolving and we also emitting an event called `confirm-order` that we'll need to attach to a click event in a button element as a form submission. So let's add that right now as the last element before the closing `</form>` tag:
+
+```html
+<button class="checkout__btn-confirm" @click.prevent="confirmOrder()">
+  {{ loading ? 'Loading...' : 'Confirm Order' }}
+</button>
+```
+
+Let's attach our `confirmOrder()` method to the click event and use a conditional statement in the template that will first render a `Loading...` while the promise is resolving, which we will get to later when we make a request to capture our order.
+
+We'll then get back to our `App.vue` to initialize an `order` data with a `null` value where we will be storing our returned order object.
 
 ```js
 data() {
@@ -683,6 +884,24 @@ data() {
     };
   },
 ```
+
+Before we create an event handler to deal with our order capture, let's utilize another Commerce.js method called [`commerce.checkout.refreshCart()`](https://commercejs.com/docs/sdk/cart#refresh-cart). We will call this function, which refreshes for a new cart, when we confirm our order:
+
+```js
+/**
+ * Refreshes to a new cart
+ * https://commercejs.com/docs/sdk/cart#refresh-cart
+ */
+refreshCart() {
+  this.$commerce.cart.refresh().then((newCart) => {
+    this.cart = newCart;
+  }).catch((error) => {
+    console.log('There was an error refreshing your cart', error);
+  });
+},
+```
+
+Now, let's create a helper function which will help to capture our order with the method [`commerce.checkout.capture()`](https://commercejs.com/docs/sdk/checkout#capture-order). It takes in the `checkoutTokenId` and the `newOrder` parameters. Upon the promise resolution, we will first refresh for a new cart, store the `order` into the `this.order` and lastly use the router to push to a `confirmation` which we will be creating the last step.
 
 ```js
 /**
@@ -700,18 +919,83 @@ handleConfirmOrder(checkoutTokenId, newOrder) {
   }).catch((error) => {
       console.log('There was an error confirming your order', error);
   });
-}
+},
 ```
+Now let's make sure we update and bind the necessary props and event handler to `router-view` instance: 
 
 ```html
     <router-view
       :products="products"
       @add-to-cart="handleAddToCart"
-      @confirm-order="handleConfirmOrder"
+      :cart="cart"
       :checkout-token="checkoutToken"
-      :order="order"
+      @confirm-order="handleConfirmOrder"
     />
 ```
 
+Lastly, we will now create a simple confirmation page to display a successful order capture.
+
 ### 5. Order confirmation
+
+Under `src/pages` create a new page component and name is `Confirmation.vue`. Let's first write out the necessary data in the script tag:
+
+```js
+export default {
+  name: 'Confirmation',
+  props: ['order'],
+  methods: {
+    backToHome() {
+      this.$router.push('/');
+      this.$emit('back-to-home');
+    }
+  }
+}
+```
+
+We first define an order prop for the parent component `App.vue` to pass the order object down then we create a method called `backToHome()` to attach a **Back to home** link we will need in our confirmation page.
+
+Next, we'll create our template to output a simple UI for the confirmation screen:
+
+```html
+<template>
+  <div class="confirmation">
+    <div class="confirmation__wrapper">
+      <div class="confirmation__wrapper-message">
+        <h3>Thank you for your purchase, {{ order.customer.firstname }} {{ order.customer.lastname }}!</h3>
+        <h4 class="confirmation__wrapper-reference">
+          <span>Order ref:</span> {{ order.customer_reference }}
+        </h4>
+      </div>
+      <button @click="backToHome()" class="confirmation__wrapper-back">
+        <font-awesome-icon size="1x" icon="arrow-left" color="#292B83"/>
+        <span>Back to home</span>
+      </button>
+    </div>
+  </div>
+</template>
+```
+This template will render out a message containing the customer's name and an order reference. The **Back to home** will fire the event to push the router home to the home page.
+
+Now in our `App.vue` again, we'll attach our order prop as well as our `backToHome()` event to our `router-view` instance:
+
+```html
+<router-view
+  :products="products"
+  @add-to-cart="handleAddToCart"
+  :cart="cart"
+  :checkout-token="checkoutToken"
+  @confirm-order="handleConfirmOrder"
+  :order="order"
+  @back-to-home="handleBackToHome"
+/>
+```
+We attached a `handleBackToHome` function to set our cart navigation back to true. We have left the cart navigation UI detail out of this tutorial.
+
+## That's it!
+
+You have now wrapped up the full series of the Commerce.js Vue.js demo store guides! You can find the full finished code in [GitHub here](https://github.com/jaepass/commercejs-vuejs-checkout)!
+
+
+
+
 
