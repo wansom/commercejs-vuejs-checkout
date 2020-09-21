@@ -4,11 +4,11 @@
     <div v-if="cart.line_items.length">
       <CartItem
         v-for="lineItem in cart.line_items"
+        class="cart__inner"
         :key="lineItem.id"
         :item="lineItem"
         @update-quantity="handleUpdateQuantity"
         @remove-from-cart="$emit('remove-from-cart', $event)"
-        class="cart__inner"
       />
       <div class="cart__total">
         <p class="cart__total-title">Subtotal:</p>
@@ -18,19 +18,21 @@
     <div class="cart__footer">
       <button
         v-if="cart.line_items.length"
-        @click="emptyCart"
+        type="button"
         class="cart__btn-empty"
+        @click="emptyCart"
       >
         Empty cart
       </button>
       <button
         v-if="cart.line_items.length"
+        type="button"
         class="cart__btn-checkout"
-        @click="checkout()"
+        @click="checkout"
       >
         Checkout
       </button>
-      <p class="cart__none" v-else>You have no items in your shopping cart, start adding some!</p>
+      <p v-else class="cart__none">You have no items in your shopping cart, start adding some!</p>
     </div>
   </div>
 </template>
