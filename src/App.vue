@@ -23,6 +23,9 @@
       @empty-cart="handleEmptyCart"
       @checkout="handleNavigateTocheckout"
     />
+    <Hero
+      :merchant="merchant"
+    />
     <router-view
       :products="products"
       @add-to-cart="handleAddToCart"
@@ -37,6 +40,7 @@
 
 <script>
 import Cart from './components/Cart';
+import Hero from './components/Hero'
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faShoppingBag, faTimes } from '@fortawesome/free-solid-svg-icons';
 
@@ -45,10 +49,12 @@ library.add(faShoppingBag, faTimes);
 export default {
   name: 'app',
   components: {
+    Hero,
     Cart,
   },
   data() {
     return {
+      merchant: {},
       products: [],
       cart: {},
       isCartVisible: false,
@@ -58,6 +64,7 @@ export default {
     };
   },
   created() {
+    this.fetchMerchantDetails();
     this.fetchProducts();
     this.fetchCart();
   },
@@ -69,6 +76,13 @@ export default {
     },
   },
   methods: {
+    fetchMerchantDetails() {
+      this.$commerce.merchants.about().then((merchant) => {
+        this.merchant = merchant;
+      }).catch((error) => {
+        console.log('There was an error fetch the merchant details', error)
+      });
+    },
     /**
      * Fetch products data from Chec and stores in the products data object.
      * https://commercejs.com/docs/sdk/products

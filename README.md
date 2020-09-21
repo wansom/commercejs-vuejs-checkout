@@ -585,8 +585,7 @@ fetchAllCountries(){
 
 The response will be stored in the countries object we initialized earlier in our data object. We will then be able to use this countries object to iterate and display a list of countries in a select element later. The `fetchStateProvince()` function below will walk through the same pattern as well.
 
-
-
+A country code argument is required to make a request with [`commerce.services.localeListSubdivisions()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-subdivisions-for-a-country)
 
 ```js
 /**
