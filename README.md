@@ -53,7 +53,7 @@ yarn add vue-router
 npm i vue-router
 ```
 
-After add the package, create a new folder called `router` in `src` with an `index.js` file. In this file is where we
+After adding the package, create a new folder called `router` in `src` with an `index.js` file. In this file is where we
 will define our routes. First, we'll need to import in `vue-router` and explicitly install VueRouter with
 `Vue.use(VueRouter)`.
 
@@ -91,9 +91,13 @@ const router = new VueRouter({ routes, mode: 'history' });
 export default router;
 ```
  
-You can see above we intend to refactor the `ProductsList` component into a `router-view`. While we are at it, we will also add routing to a checkout and confirmation page which we will get to creating in the guide. We then instantiate a router instance and pass our defined route options to it. Here are some other [methods to adding routing](https://router.vuejs.org/guide/) to your Vue application depending on the use case.
+You can see above we intend to refactor the `ProductsList` component into a `router-view`. While we are at it, we will
+also add routing to a checkout and confirmation page which we will get to creating in the guide. We then instantiate a
+router instance and pass our defined route options to it. Here are some other [methods to adding
+routing](https://router.vuejs.org/guide/) to your Vue application depending on the use case.
 
-Lastly, to have access to `this.$router` in the application's components, we inject the router option when the application mounts. 
+Lastly, to have access to `this.$router` in the application's components, we inject the router option when the
+application mounts. 
 
 ```js
 import router from './router';
@@ -104,7 +108,8 @@ new Vue({
 }).$mount('#app');
 ```
 
-Now with all the routes defined, we can refactor our `ProductsList` render in `App.vue` to use `router-view` and add our first routing to navigate to a checkout page from the `cart` component.
+Now with all the routes defined, we can refactor our `ProductsList` render in `App.vue` to use `router-view` and add our
+first routing to navigate to a checkout page from the `cart` component.
 
 ```html
 <router-view
@@ -113,7 +118,8 @@ Now with all the routes defined, we can refactor our `ProductsList` render in `A
 />
 ```
 
-Let's then go in to `Cart.vue` and add a second button in the cart footer with a router link to push into a checkout view component that we will be adding later on.
+Let's then go in to `Cart.vue` and add a second button in the cart footer with a router link to push into a checkout
+view component that we will be adding later on.
 
 ```html
 <div class="cart__footer">
@@ -126,15 +132,20 @@ Let's then go in to `Cart.vue` and add a second button in the cart footer with a
   </router-link>
 </div>
 ```
-The `to` prop in the `router-link` instance will look for a matching named route and push the `Checkout` component into view.
+The `to` prop in the `router-link` instance will look for a matching named route and push the `Checkout` component into
+view.
 
 Let's now divert back to our `App.vue` where we will need to generate a checkout token before we move on any further. 
 
 ### 2. Generate a checkout token
 
-Commerce.js provides a powerful method [`commerce.checkout.generateToken()`](https://commercejs.com/docs/sdk/checkout#generate-token) to capture all the data we need from the cart to initiate the checkout process simply by providing the cart ID in session, a product ID, or a product's permalink as an argument.
+Commerce.js provides a powerful method
+[`commerce.checkout.generateToken()`](https://commercejs.com/docs/sdk/checkout#generate-token) to capture all the data
+we need from the cart to initiate the checkout process simply by providing the cart ID in session, a product ID, or a
+product's permalink as an argument.
 
-In `App.vue`, let's first initialize a `checkoutToken` in the data property and then create a helper function `generateCheckoutToken()` to generate the checkout token we need in order to capture our checkout.
+In `App.vue`, let's first initialize a `checkoutToken` in the data property and then create a helper function
+`generateCheckoutToken()` to generate the checkout token we need in order to capture our checkout.
 
 ```js
 // App.vue
@@ -158,9 +169,14 @@ generateCheckoutToken() {
 },
 ```
 
-The `commerce.checkout.generateToken()` takes in our cart ID and the identifier type `cart`. The type property is an optional parameter you can pass in as an identifier, in this case `cart` the type associated to `this.cart.id`.
+The `commerce.checkout.generateToken()` takes in our cart ID and the identifier type `cart`. The type property is an
+optional parameter you can pass in as an identifier, in this case `cart` the type associated to `this.cart.id`.
 
-To call this function, we could include it in the `mounted` lifecyle hook to generate a token when the component mounts or we could execute this function only when the cart prop changes. To do so, we can utilize the [`watch`](https://vuejs.org/v2/guide/computed.html?#Computed-vs-Watched-Property) property to watch for prop changes in the cart object, in which case, checking whether `line_items` in cart exists. The latter would be a more elegant way to handle the execution of `generateCheckoutToken()`.
+To call this function, we could include it in the `mounted` lifecyle hook to generate a token when the component mounts
+or we could execute this function only when the cart prop changes. To do so, we can utilize the
+[`watch`](https://vuejs.org/v2/guide/computed.html?#Computed-vs-Watched-Property) property to watch for prop changes in
+the cart object, in which case, checking whether `line_items` in cart exists. The latter would be a more elegant way to
+handle the execution of `generateCheckoutToken()`.
 
 Upon a successful request to generate the checkout token, you should receive an abbreviated response like the below json
 data:
@@ -335,17 +351,28 @@ data:
   }
 }
 ```
-With the verbose data that the `generateCheckoutToken()` returns, we now have a checkout token object which contains everything we need to create the checkout page.
+With the verbose data that the `generateCheckoutToken()` returns, we now have a checkout token object which contains
+everything we need to create the checkout page.
 
 ### 3. Create checkout page
 
-Earlier on in step 1, we created the appropriate route options to navigate to a checkout page. We will now need to create that view page to render out when the router pushes to a `/checkout` path. 
+Earlier on in step 1, we created the appropriate route options to navigate to a checkout page. We will now need to
+create that view page to render out when the router pushes to a `/checkout` path. 
 
-First, let's create a new folder `src/pages` and a `Checkout.vue` page component. This page component is going to get real hefty quite fast, but we'll break it down in chunks throughout the rest of this guide.
+First, let's create a new folder `src/pages` and a `Checkout.vue` page component. This page component is going to get
+real hefty quite fast, but we'll break it down in chunks throughout the rest of this guide.
 
-The [Checkout resource](https://commercejs.com/docs/sdk/checkout) in Chec helps to handle an otherwise one of the most complex moving parts of an eCommerce application. The Checkout endpoint comes with the core `commerce.checkout.generateToken()` and `commerce.checkout.capture()` methods along with [Checkout helpers](https://commercejs.com/docs/sdk/concepts#checkout-helpers), additional helper functions for a seamless purchasing flow which we will touch on more later.
+The [Checkout resource](https://commercejs.com/docs/sdk/checkout) in Chec helps to handle an otherwise one of the most
+complex moving parts of an eCommerce application. The Checkout endpoint comes with the core
+`commerce.checkout.generateToken()` and `commerce.checkout.capture()` methods along with [Checkout
+helpers](https://commercejs.com/docs/sdk/concepts#checkout-helpers), additional helper functions for a seamless
+purchasing flow which we will touch on more later.
 
-In the `Checkout.vue` page component, let's start first by initializing all the data we will need in this component to build out a checkout form. There are four core properties that are required to process an order using Commerce.js - `customer`, `shipping`, `fulfillment`, and `payment`. Let's start by defining the fields we will need to capture in the form. The main property objects will all go under a `form` object. We will then bind these properties to each single field in our template with the [`v-model` directive](https://vuejs.org/v2/guide/forms.html).
+In the `Checkout.vue` page component, let's start first by initializing all the data we will need in this component to
+build out a checkout form. There are four core properties that are required to process an order using Commerce.js -
+`customer`, `shipping`, `fulfillment`, and `payment`. Let's start by defining the fields we will need to capture in the
+form. The main property objects will all go under a `form` object. We will then bind these properties to each single
+field in our template with the [`v-model` directive](https://vuejs.org/v2/guide/forms.html).
 
 ```js
 export default {
@@ -383,7 +410,8 @@ export default {
 },
 ```
 
-And in our template fields, as mentioned, we will bind the data to each of the `v-model` attributes in the input elements. The inputs will be pre-filled with the state data we created above.
+And in our template fields, as mentioned, we will bind the data to each of the `v-model` attributes in the input
+elements. The inputs will be pre-filled with the state data we created above.
 
 ```html
 <form class="checkout__form">
@@ -430,14 +458,21 @@ And in our template fields, as mentioned, we will bind the data to each of the `
 </form>
 ```
 
-The fields above all contain customer details and payments inputs we will need to collect from the customer. The shipping method data is also required in order to ship the items to the customer. Chec and Commerce.js has verbose shipment and fulfillment methods to handle this process. In the [Chec dashboard](https://dashboard.chec.io/), worldwide shipping zones can be added in settings > shipping and then enabled at the product level. For this demo merchant account, we have enabled international shipping for each product. In the next section, we will touch on some Commerce.js checkout helper functions that will: 
--  Easily fetch a full list of countries, states, provinces and shipping options to populate the form fields for fulfillment data collection
+The fields above all contain customer details and payments inputs we will need to collect from the customer. The
+shipping method data is also required in order to ship the items to the customer. Chec and Commerce.js has verbose
+shipment and fulfillment methods to handle this process. In the [Chec dashboard](https://dashboard.chec.io/), worldwide
+shipping zones can be added in settings > shipping and then enabled at the product level. For this demo merchant
+account, we have enabled international shipping for each product. In the next section, we will touch on some Commerce.js
+checkout helper functions that will: 
+-  Easily fetch a full list of countries, states, provinces and shipping options to populate the form fields for
+   fulfillment data collection
 -  Get the live object and updates it with any data changes from the form fields
 
 
 ### 3. Checkout helpers
 
-Let's first initialize the empty objects and arrays that we will need to store the responses from the [checkout helper](https://commercejs.com/docs/sdk/concepts#checkout-helpers) methods and list them under the form fields data:
+Let's first initialize the empty objects and arrays that we will need to store the responses from the [checkout
+helper](https://commercejs.com/docs/sdk/concepts#checkout-helpers) methods and list them under the form fields data:
 
 ```js
 data() {
@@ -450,7 +485,11 @@ data() {
   }
 ```
 
-We will go through each of the initialized data and the checkout helper method that pertains to it. First let's have a look at the `liveObject`. The [live object](https://commercejs.com/docs/sdk/concepts#the-live-object) is a living object which adjusts to show the live tax rates, prices, and totals for a checkout token. This object will be updated every time a checkout helper executes and the data can be used to reflect the changing UI ie. When the shipping option is applied or when tax is calculated. Let's now first create a method that will fetch the live object:
+We will go through each of the initialized data and the checkout helper method that pertains to it. First let's have a
+look at the `liveObject`. The [live object](https://commercejs.com/docs/sdk/concepts#the-live-object) is a living object
+which adjusts to show the live tax rates, prices, and totals for a checkout token. This object will be updated every
+time a checkout helper executes and the data can be used to reflect the changing UI ie. When the shipping option is
+applied or when tax is calculated. Let's now first create a method that will fetch the live object:
 
 ```js
 /**
@@ -466,7 +505,10 @@ getLiveObject(checkoutTokenId) {
 },
 ```
 
-This `getLiveObject()` function will fetch the current checkout live object at `GET v1/checkouts/{checkout_token_id}/live` with the method [`commerce.checkout.getLive`](https://commercejs.com/docs/api/?javascript--cjs#get-the-live-object) and store the object in `this.liveObject` that we created earlier. 
+This `getLiveObject()` function will fetch the current checkout live object at `GET
+v1/checkouts/{checkout_token_id}/live` with the method
+[`commerce.checkout.getLive`](https://commercejs.com/docs/api/?javascript--cjs#get-the-live-object) and store the object
+in `this.liveObject` that we created earlier. 
 
 Upon a successful call, an abbreviated response might look like the below json data:
 
@@ -567,9 +609,12 @@ Upon a successful call, an abbreviated response might look like the below json d
 }
 ```
 
-We will be working with this response later when we update the selected shipping method. Next, let's start creating methods that will fetch a list of countries and subdivisions for a particular country.
+We will be working with this response later when we update the selected shipping method. Next, let's start creating
+methods that will fetch a list of countries and subdivisions for a particular country.
 
-With a created function `fetchAllCountries()`, we will use [`commerce.services.localeListCountries()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-countries) at `GET v1/services/locale/countries` to fetch and list all countries registered in the Chec dashboard.
+With a created function `fetchAllCountries()`, we will use
+[`commerce.services.localeListCountries()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-countries) at `GET
+v1/services/locale/countries` to fetch and list all countries registered in the Chec dashboard.
 
 ```js
 /**
@@ -585,9 +630,13 @@ fetchAllCountries(){
 },
 ```
 
-The response will be stored in the countries object we initialized earlier in our data object. We will then be able to use this countries object to iterate and display a list of countries in a select element later. The `fetchStateProvince()` function below will walk through the same pattern as well.
+The response will be stored in the countries object we initialized earlier in our data object. We will then be able to
+use this countries object to iterate and display a list of countries in a select element later. The
+`fetchStateProvince()` function below will walk through the same pattern as well.
 
-A country code argument is required to make a request with [`commerce.services.localeListSubdivisions()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-subdivisions-for-a-country) to `GET v1/services/locale/{country_code}/subdivisions` to get a list of all subdivisions for that particular country.
+A country code argument is required to make a request with
+[`commerce.services.localeListSubdivisions()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-subdivisions-for-a-country)
+to `GET v1/services/locale/{country_code}/subdivisions` to get a list of all subdivisions for that particular country.
 
 ```js
 /**
@@ -604,9 +653,14 @@ fetchStateProvince(){
 },
 ```
 
-With a successful request, the response will be stored in the `this.shippingSubdivions` array and will be used to iterate and output onto a select element in our template later on.
+With a successful request, the response will be stored in the `this.shippingSubdivions` array and will be used to
+iterate and output onto a select element in our template later on.
 
-For our next checkout helper function, we will fetch the current shipping options available in our merchant account. This function will fetch all the shipping options that were registered in the dashboard and enabled at the product level using the [`commerce.checkout.getShippingOptions()`](https://commercejs.com/docs/sdk/checkout#get-shipping-methods) method. This function takes in two required parameters - the `checkoutTokenId`, the country code for the provide `country` in our data, and the `region` is optional.
+For our next checkout helper function, we will fetch the current shipping options available in our merchant account.
+This function will fetch all the shipping options that were registered in the dashboard and enabled at the product level
+using the [`commerce.checkout.getShippingOptions()`](https://commercejs.com/docs/sdk/checkout#get-shipping-methods)
+method. This function takes in two required parameters - the `checkoutTokenId`, the country code for the provide
+`country` in our data, and the `region` is optional.
 
 
 ```js
@@ -624,11 +678,18 @@ fetchShippingOptions(checkoutTokenId, country, stateProvince){
 },
 ```
 
-When the promise resolves, the response will be stored into `this.shippingOptions` which we will then later use to render a list of shipping options in our template.
+When the promise resolves, the response will be stored into `this.shippingOptions` which we will then later use to
+render a list of shipping options in our template.
 
-Our last checkout helper we will be adding before we start to hook up the data in our template, will be the [`commerce.checkout.checkShippingOption()`](https://commercejs.com/docs/api/?javascript--cjs#check-shipping-method) method. This method helps to validate the shipping option selected for the provided checkout token and applies it to the live object to then send along with an order.
+Our last checkout helper we will be adding before we start to hook up the data in our template, will be the
+[`commerce.checkout.checkShippingOption()`](https://commercejs.com/docs/api/?javascript--cjs#check-shipping-method)
+method. This method helps to validate the shipping option selected for the provided checkout token and applies it to the
+live object to then send along with an order.
 
-First, we create a function called `validateShippingOption()` and call the `commerce.checkout.checkShippingOption()` method. This function takes in the `checkoutToken.id`, and shipping details object with the `shippingOptionId`, the `country` and the `region` data. When the promise resolves, we will update `fulfillment.selectedShippingOption` with the `shippingOptionId` as well as the `liveObject` will be updated.
+First, we create a function called `validateShippingOption()` and call the `commerce.checkout.checkShippingOption()`
+method. This function takes in the `checkoutToken.id`, and shipping details object with the `shippingOptionId`, the
+`country` and the `region` data. When the promise resolves, we will update `fulfillment.selectedShippingOption` with the
+`shippingOptionId` as well as the `liveObject` will be updated.
 
 ```js
 /**
@@ -648,7 +709,8 @@ validateShippingOption(shippingOptionId) {
   })
 },
 ```
-With a successful request, the live object will be returned along with the payload. An abbreviated response will look like the below json data:
+With a successful request, the live object will be returned along with the payload. An abbreviated response will look
+like the below json data:
 
 ```json
 {
@@ -742,7 +804,8 @@ With a successful request, the live object will be returned along with the paylo
 }
 ```
 
-Alright, that wraps up all the checkout helper functions we will create for our checkout page. Now it's time to execute and hook up the responses to our template. Let's get right to it!
+Alright, that wraps up all the checkout helper functions we will create for our checkout page. Now it's time to execute
+and hook up the responses to our template. Let's get right to it!
 
 Let's start with calling our `getLiveObject` when the component mounts:
 
@@ -755,9 +818,11 @@ mounted() {
 },
 ```
 
-In the `mounted()` lifecycle hook, we first check that the `checkoutToken` exists before we call the `getLiveObject` with the `checkoutToken.id` passed in as an argument.
+In the `mounted()` lifecycle hook, we first check that the `checkoutToken` exists before we call the `getLiveObject`
+with the `checkoutToken.id` passed in as an argument.
 
-Next, we will also call both the `fetchAllCountries()` and `fetchStateProvince()` functions when component is created. This ensures that we have our data ready to use when we render our select options in our template later.
+Next, we will also call both the `fetchAllCountries()` and `fetchStateProvince()` functions when component is created.
+This ensures that we have our data ready to use when we render our select options in our template later.
 
 ```js
 created() {
@@ -766,7 +831,9 @@ created() {
 },
 ```
 
-In the same vein, we will also need to call the `fetchShippingOptions()` function to display the list of shipping options we have available. Let's add `this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince)` in the mounted hook after calling `this.getLiveObject(this.checkoutToken.id)`:
+In the same vein, we will also need to call the `fetchShippingOptions()` function to display the list of shipping
+options we have available. Let's add `this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country,
+this.form.shipping.stateProvince)` in the mounted hook after calling `this.getLiveObject(this.checkoutToken.id)`:
 
 ```js
 mounted() {
@@ -778,7 +845,8 @@ mounted() {
 }
 ```
 
-Lastly, let's create a couple of `watch` and `computed` properties to handle validating our shipping option and setting the selected shipping option.
+Lastly, let's create a couple of `watch` and `computed` properties to handle validating our shipping option and setting
+the selected shipping option.
 
 ```js
 watch: {
@@ -792,7 +860,8 @@ computed: {
   },
 ```
 
-We will now need to bind all the data responses to the shipping form fields. In the shipping section of the template we create earlier on, place all the markup underneath the **Postal/Zip code** input field:
+We will now need to bind all the data responses to the shipping form fields. In the shipping section of the template we
+create earlier on, place all the markup underneath the **Postal/Zip code** input field:
 
 ```html
   <label class="checkout__label" for="country">Country</label>
@@ -814,17 +883,22 @@ We will now need to bind all the data responses to the shipping form fields. In 
   </select>
 ```
 The three fields we just added: 
-- Binds the `form.shipping.country` as the selected country and loops through the `shippingSubdivisions` array to render as options
-- Binds the `form.shipping.stateProvince` as the selected state and iterates through the `countries` object to display the available list of countries
-- Binds the `form.fulfillment.selectedShippingOption` and loops through the `shippingOptions` array to render as options in the **Shipping Method** field.
+- Binds the `form.shipping.country` as the selected country and loops through the `shippingSubdivisions` array to render
+  as options
+- Binds the `form.shipping.stateProvince` as the selected state and iterates through the `countries` object to display
+  the available list of countries
+- Binds the `form.fulfillment.selectedShippingOption` and loops through the `shippingOptions` array to render as options
+  in the **Shipping Method** field.
 
 Once all the data is bounded to the field, we are then able to collect the neccessary data to send to an order object.
 
 ### 4. Capture order
 
-With all the data collected, we'll now need to associate it to each of the order properties in an appropriate data structure to be able to confirm the order.
+With all the data collected, we'll now need to associate it to each of the order properties in an appropriate data
+structure to be able to confirm the order.
 
-Let's create a `confirmOrder()` function and structure out our returned data. Have a look at the [expected structure here](https://commercejs.com/docs/sdk/checkout#capture-order) to send an order request.
+Let's create a `confirmOrder()` function and structure out our returned data. Have a look at the [expected structure
+here](https://commercejs.com/docs/sdk/checkout#capture-order) to send an order request.
 
 ```js
 confirmOrder() {
@@ -862,7 +936,10 @@ confirmOrder() {
 }
 ```
 
-Follow the exact structure of the data we intend to send and emit the object along with the required `checkoutToken.id`. Note that first we are setting the `loading` to true while the order request will be resolving and we also emitting an event called `confirm-order` that we'll need to attach to a click event in a button element as a form submission. So let's add that right now as the last element before the closing `</form>` tag:
+Follow the exact structure of the data we intend to send and emit the object along with the required `checkoutToken.id`.
+Note that first we are setting the `loading` to true while the order request will be resolving and we also emitting an
+event called `confirm-order` that we'll need to attach to a click event in a button element as a form submission. So
+let's add that right now as the last element before the closing `</form>` tag:
 
 ```html
 <button class="checkout__btn-confirm" @click.prevent="confirmOrder()">
@@ -870,9 +947,12 @@ Follow the exact structure of the data we intend to send and emit the object alo
 </button>
 ```
 
-Let's attach our `confirmOrder()` method to the click event and use a conditional statement in the template that will first render a `Loading...` while the promise is resolving, which we will get to later when we make a request to capture our order.
+Let's attach our `confirmOrder()` method to the click event and use a conditional statement in the template that will
+first render a `Loading...` while the promise is resolving, which we will get to later when we make a request to capture
+our order.
 
-We'll then get back to our `App.vue` to initialize an `order` data with a `null` value where we will be storing our returned order object.
+We'll then get back to our `App.vue` to initialize an `order` data with a `null` value where we will be storing our
+returned order object.
 
 ```js
 data() {
@@ -885,7 +965,9 @@ data() {
   },
 ```
 
-Before we create an event handler to deal with our order capture, let's utilize another Commerce.js method called [`commerce.checkout.refreshCart()`](https://commercejs.com/docs/sdk/cart#refresh-cart). We will call this function, which refreshes for a new cart, when we confirm our order:
+Before we create an event handler to deal with our order capture, let's utilize another Commerce.js method called
+[`commerce.checkout.refreshCart()`](https://commercejs.com/docs/sdk/cart#refresh-cart). We will call this function,
+which refreshes for a new cart, when we confirm our order:
 
 ```js
 /**
@@ -901,7 +983,11 @@ refreshCart() {
 },
 ```
 
-Now, let's create a helper function which will help to capture our order with the method [`commerce.checkout.capture()`](https://commercejs.com/docs/sdk/checkout#capture-order). It takes in the `checkoutTokenId` and the `newOrder` parameters. Upon the promise resolution, we will first refresh for a new cart, store the `order` into the `this.order` and lastly use the router to push to a `confirmation` which we will be creating the last step.
+Now, let's create a helper function which will help to capture our order with the method
+[`commerce.checkout.capture()`](https://commercejs.com/docs/sdk/checkout#capture-order). It takes in the
+`checkoutTokenId` and the `newOrder` parameters. Upon the promise resolution, we will first refresh for a new cart,
+store the `order` into the `this.order` and lastly use the router to push to a `confirmation` which we will be creating
+the last step.
 
 ```js
 /**
@@ -937,7 +1023,8 @@ Lastly, we will now create a simple confirmation page to display a successful or
 
 ### 5. Order confirmation
 
-Under `src/pages` create a new page component and name is `Confirmation.vue`. Let's first write out the necessary data in the script tag:
+Under `src/pages` create a new page component and name is `Confirmation.vue`. Let's first write out the necessary data
+in the script tag:
 
 ```js
 export default {
@@ -952,7 +1039,8 @@ export default {
 }
 ```
 
-We first define an order prop for the parent component `App.vue` to pass the order object down then we create a method called `backToHome()` to attach a **Back to home** link we will need in our confirmation page.
+We first define an order prop for the parent component `App.vue` to pass the order object down then we create a method
+called `backToHome()` to attach a **Back to home** link we will need in our confirmation page.
 
 Next, we'll create our template to output a simple UI for the confirmation screen:
 
@@ -974,9 +1062,11 @@ Next, we'll create our template to output a simple UI for the confirmation scree
   </div>
 </template>
 ```
-This template will render out a message containing the customer's name and an order reference. The **Back to home** will fire the event to push the router home to the home page.
+This template will render out a message containing the customer's name and an order reference. The **Back to home** will
+fire the event to push the router home to the home page.
 
-Now in our `App.vue` again, we'll attach our order prop as well as our `backToHome()` event to our `router-view` instance:
+Now in our `App.vue` again, we'll attach our order prop as well as our `backToHome()` event to our `router-view`
+instance:
 
 ```html
 <router-view
@@ -989,11 +1079,13 @@ Now in our `App.vue` again, we'll attach our order prop as well as our `backToHo
   @back-to-home="handleBackToHome"
 />
 ```
-We attached a `handleBackToHome` function to set our cart navigation back to true. We have left the cart navigation UI detail out of this tutorial.
+We attached a `handleBackToHome` function to set our cart navigation back to true. We have left the cart navigation UI
+detail out of this tutorial.
 
 ## That's it!
 
-You have now wrapped up the full series of the Commerce.js Vue.js demo store guides! You can find the full finished code in [GitHub here](https://github.com/jaepass/commercejs-vuejs-checkout)!
+You have now wrapped up the full series of the Commerce.js Vue.js demo store guides! You can find the full finished code
+in [GitHub here](https://github.com/jaepass/commercejs-vuejs-checkout)!
 
 
 
