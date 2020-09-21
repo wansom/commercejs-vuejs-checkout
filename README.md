@@ -344,7 +344,7 @@ First, let's create a new folder `src/pages` and a `Checkout.vue` page component
 
 The [Checkout resource](https://commercejs.com/docs/sdk/checkout) in Chec helps to handle an otherwise one of the most complex moving parts of an eCommerce application. The Checkout endpoint comes with the core `commerce.checkout.generateToken()` and `commerce.checkout.capture()` methods along with [Checkout helpers](https://commercejs.com/docs/sdk/concepts#checkout-helpers), additional helper functions for a seamless purchasing flow which we will touch on more later.
 
-In the `Checkout.vue` page component, let's start first by initializing all the data we will need in this component to build out a checkout form. There are four core properties that are required to process an order using Commerce.js - `customer`, `shipping`, `fulfillment`, and `payment`. Let's start by defining the fields we will need to capture in the form. The main objects will all go under a `form` object. We will be bind these properties to each single field in our template with the [`v-model` directive](https://vuejs.org/v2/guide/forms.html).
+In the `Checkout.vue` page component, let's start first by initializing all the data we will need in this component to build out a checkout form. There are four core properties that are required to process an order using Commerce.js - `customer`, `shipping`, `fulfillment`, and `payment`. Let's start by defining the fields we will need to capture in the form. The main property objects will all go under a `form` object. We will then bind these properties to each single field in our template with the [`v-model` directive](https://vuejs.org/v2/guide/forms.html).
 
 ```js
 export default {
@@ -382,7 +382,7 @@ export default {
 },
 ```
 
-And in our template fields, as mentioned, we will bind the data to the inputs:
+And in our template fields, as mentioned, we will bind the data to each of the `v-model` attributes in the input elements. The inputs will be pre-filled with the state data we created above.
 
 ```html
 <form class="checkout__form">
@@ -411,24 +411,6 @@ And in our template fields, as mentioned, we will bind the data to the inputs:
     <label class="checkout__label" for="postalZipCode">Postal/Zip Code</label>
     <input class="checkout__input" type="text" v-model="form.shipping.postalZipCode" name="postalZipCode" placeholder="Enter your postal/zip code" required />
 
-    <label class="checkout__label" for="country">Country</label>
-    <select v-model="form.shipping.country" name="country" class="checkout__select">
-      <option value="" disabled>Country</option>
-      <option v-for="(country, index) in countries" :value="index" :key="index">{{ country }}</option>
-    </select>
-
-    <label class="checkout__label" for="stateProvince">State/Province</label>
-    <select v-model="form.shipping.stateProvince" name="stateProvince" class="checkout__select">
-      <option class="checkout__option" value="" disabled>State/Province</option>
-      <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
-    </select>
-
-    <label class="checkout__label" for="selectedShippingOption">Shipping Method</label>
-    <select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
-      <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
-      <option class="checkout__select-option" v-for="method in shippingOptions" :value="method.id" :key="method.id">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
-    </select>
-
   <h4 class="checkout__subheading">Payment Information</h4>
 
     <label class="checkout__label" for="cardNum">Credit Card Number</label>
@@ -447,22 +429,151 @@ And in our template fields, as mentioned, we will bind the data to the inputs:
 </form>
 ```
 
+The fields above all contain customer details and payments inputs we will need to collect from the customer. The shipping method data is also required in order to ship the items to the customer. Chec and Commerce.js has verbose shipment and fulfillment methods to handle this process. In the [Chec dashboard](https://dashboard.chec.io/), worldwide shipping zones can be added in settings > shipping and then enabled at the product level. For this demo merchant account, we have enabled international shipping for each product. In the next section, we will touch on some Commerce.js checkout helper functions that will: 
+-  Easily fetch a full list of countries, states, provinces and shipping options to populate the form fields for fulfillment data collection
+-  Get the live object and updates it with any data changes from the form fields
+
+
 ### 3. Checkout helpers
+
+Let's first initialize the empty objects and arrays that we will need to store the responses from the [checkout helper](https://commercejs.com/docs/sdk/concepts#checkout-helpers) methods and list them under the form fields data:
 
 ```js
 data() {
   return {
+    liveObject: {},
     shippingOptions: [],
     shippingSubdivisions: {},
     countries: {},
   }
 ```
 
+We will go through each of the initialized data and the checkout helper method that pertains to it. First let's have a look at the `liveObject`. The [live object](https://commercejs.com/docs/sdk/concepts#the-live-object) is a living object which adjusts to show the live tax rates, prices, and totals for a checkout token. This object will be updated every time a checkout helper executes and the data can be used to reflect the changing UI ie. When the shipping option is applied or when tax is calculated. Let's now first create a method that will fetch the live object:
+
 ```js
 /**
-  * Fetches a list of countries
-  * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
-  */
+ * Gets the live object
+ * https://commercejs.com/docs/api/?javascript--cjs#get-the-live-object
+ */
+getLiveObject(checkoutTokenId) {
+  this.$commerce.checkout.getLive(checkoutTokenId).then((liveObject) => {
+    this.liveObject = liveObject;
+  }).catch((error) => {
+    console.log('There was an error getting the live object', error);
+  });
+},
+```
+
+This `getLiveObject()` function will fetch the current checkout live object at `GET v1/checkouts/{checkout_token_id}/live` with the method [`commerce.checkout.getLive`](https://commercejs.com/docs/api/?javascript--cjs#get-the-live-object) and store the object in `this.liveObject` that we created earlier. 
+
+Upon a successful call, an abbreviated response might look like the below json data:
+
+```json
+{
+  "merchant_id": 18462,
+  "currency": {
+    "code": "USD",
+    "symbol": "$"
+  },
+  "line_items": [
+    {
+      "id": "item_7RyWOwmK5nEa2V",
+      "product_id": "prod_8XO3wpDrOwYAzQ",
+      "product_name": "Coffee",
+      "type": "standard",
+      "sku": null,
+      "quantity": 1,
+      "price": {
+        "raw": 7.5,
+        "formatted": "7.50",
+        "formatted_with_symbol": "$7.50",
+        "formatted_with_code": "7.50 USD"
+      },
+      "line_total": {
+        "raw": 7.5,
+        "formatted": "7.50",
+        "formatted_with_symbol": "$7.50",
+        "formatted_with_code": "7.50 USD"
+      },
+      "variants": [],
+      "tax": {
+        "is_taxable": false,
+        "taxable_amount": null,
+        "amount": null,
+        "breakdown": null
+      }
+    }
+  ],
+  "subtotal": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+  "discount": [],
+  "shipping": {
+    "available_options": [
+      {
+        "id": "ship_kpnNwAjO9omXB3",
+        "description": "International",
+        "price": {
+          "raw": 5,
+          "formatted": "5.00",
+          "formatted_with_symbol": "$5.00",
+          "formatted_with_code": "5.00 USD"
+        },
+        "countries": [
+          "US",
+          "CA",
+        ]
+      }
+    ],
+    "price": {
+      "raw": 0,
+      "formatted": "0.00",
+      "formatted_with_symbol": "$0.00",
+      "formatted_with_code": "0.00 USD"
+    }
+  },
+  "tax": {
+    "amount": {
+      "raw": 0,
+      "formatted": "0.00",
+      "formatted_with_symbol": "$0.00",
+      "formatted_with_code": "0.00 USD"
+    }
+  },
+  "total": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+  "total_with_tax": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+  "giftcard": [],
+  "total_due": {
+    "raw": 7.5,
+    "formatted": "7.50",
+    "formatted_with_symbol": "$7.50",
+    "formatted_with_code": "7.50 USD"
+  },
+}
+```
+
+We will be working with this response later when we update the selected shipping method. Next, let's start creating methods that will fetch a list of countries and subdivisions for a particular country.
+
+With a created function `fetchAllCountries()`, we will use [`commerce.services.localeListCountries()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-countries) at `GET v1/services/locale/countries` to fetch and list all countries registered in the Chec dashboard.
+
+```js
+/**
+ * Fetches a list of countries
+ * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
+ */
 fetchAllCountries(){
     this.$commerce.services.localeListCountries().then((countries) => {
         this.countries = countries.countries
@@ -471,6 +582,11 @@ fetchAllCountries(){
     });
 },
 ```
+
+The response will be stored in the countries object we initialized earlier in our data object. We will then be able to use this countries object to iterate and display a list of countries in a select element later. The `fetchStateProvince()` function below will walk through the same pattern as well.
+
+
+
 
 ```js
 /**
@@ -490,13 +606,34 @@ fetchStateProvince(){
 ```js
 /**
  * Fetches the available shipping methods for the current checkout
+ * https://commercejs.com/docs/sdk/checkout#get-shipping-methods
  */
-fetchShippingOptions(){
-this.$commerce.checkout.getShippingOptions(this.checkoutToken.id, { country: 'US', region: 'CA' }).then((options) => {
-    this.shippingOptions = options;
+fetchShippingOptions(checkoutToken, country, stateProvince){
+  this.$commerce.checkout.getShippingOptions(checkoutToken,
+    { country: country, region: stateProvince }).then((options) => {
+      this.shippingOptions = options;
+    }).catch((error) => {
+      console.log('There was an error fetching the shipping methods', error);
+  });
+},
+```
+
+```js
+/**
+ * Checks and validates the shipping method
+ * https://commercejs.com/docs/api/?javascript--cjs#check-shipping-method
+ */
+validateShippingOption(shippingOptionId) {
+  this.commerce.checkout.checkShippingOption(this.checkoutToken.id, {
+    shipping_option_id: shippingOptionId,
+    country: this.form.shipping.country,
+    region: this.form.shipping.stateProvince
+  }).then((shippingOption) => {
+    this.fulfillment.selectedShippingOption = shippingOption.id;
+    this.getLiveObject();
   }).catch((error) => {
-    console.log('There was an error fetching the shipping methods', error);
-});
+    console.log('There was an error setting the shipping option', error);
+  })
 },
 ```
 

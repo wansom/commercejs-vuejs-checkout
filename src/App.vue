@@ -30,6 +30,7 @@
       :checkout-token="checkoutToken"
       @confirm-order="handleConfirmOrder"
       :order="order"
+      @back-to-home="handleBackToHome"
     />
   </div>
 </template>I
@@ -152,7 +153,7 @@ export default {
      */
     refreshCart() {
       this.$commerce.cart.refresh().then((newCart) => {
-        this.cart = resp.newCart
+        this.cart = newCart;
       }).catch((error) => {
         console.log('There was an error refreshing your cart', error);
       });
@@ -184,6 +185,12 @@ export default {
       }).catch((error) => {
           console.log('There was an error confirming your order', error);
       });
+    },
+    /**
+     * Set isNavVisible on routing back to home
+     */
+    handleBackToHome() {
+      this.isNavVisible = true;
     }
   }
 };

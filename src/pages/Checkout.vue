@@ -60,11 +60,12 @@
               <label class="checkout__label" for="ccv">CCV</label>
               <input class="checkout__input" type="text" name="ccv" v-model="form.payment.ccv" placeholder="CCV (3 digits)" />
 
-          <button class="checkout__btn-confirm" @click.prevent="confirmOrder">Confirm Order</button>
+          <button class="checkout__btn-confirm" @click.prevent="confirmOrder">
+            {{ loading ? 'Loading...' : 'Confirm Order' }}
+          </button>
       </form>
       <div class="checkout__summary">
         <h4>Order Summary</h4>
-        <div v-if="cart.line_items.length">
           <div
             v-for="lineItem in cart.line_items"
             :key="lineItem.id"
@@ -77,11 +78,10 @@
           <div class="checkout__summary-total">
             <p class="checkout__summary-price">
               <span>Subtotal:</span>
-              {{ cart.subtotal.formatted_with_symbol }}
+              {{ liveObject.total_due.formatted_with_symbol }}
             </p>
           </div>
         </div>
-      </div>
     </div>
   </div>
 </template>
@@ -122,6 +122,8 @@ export default {
                     billingPostalZipCode: '94107',
                 },
             },
+            loading: false,
+            liveObject: {},
             shippingOptions: [],
             shippingSubdivisions: {},
             countries: {},
@@ -135,9 +137,21 @@ export default {
         if(this.checkoutToken == null) {
             return;
         }
-        this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country);
+        this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
+        this.getLiveObject(this.checkoutToken.id);
     },
     methods: {
+        /**
+         * Gets the live object
+         * https://commercejs.com/docs/api/?javascript--cjs#get-the-live-object
+         */
+        getLiveObject(checkoutTokenId) {
+          this.$commerce.checkout.getLive(checkoutTokenId).then((liveObject) => {
+            this.liveObject = liveObject;
+          }).catch((error) => {
+            console.log('There was an error getting the live object', error);
+          });
+        },
         /**
          * Fetches a list of countries
          * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
@@ -164,13 +178,36 @@ export default {
         /**
          * Fetches the available shipping methods for the current checkout
          */
-        fetchShippingOptions(){
-          this.$commerce.checkout.getShippingOptions(this.checkoutToken.id, { country: 'US', region: 'CA' }).then((options) => {
+        fetchShippingOptions(checkoutToken, country, stateProvince){
+          this.$commerce.checkout.getShippingOptions(checkoutToken,
+            { country: country, region: stateProvince }).then((options) => {
               this.shippingOptions = options;
             }).catch((error) => {
               console.log('There was an error fetching the shipping methods', error);
           });
         },
+        /**
+         * Checks and validates the shipping method
+         * https://commercejs.com/docs/api/?javascript--cjs#check-shipping-method
+         */
+        validateShippingOption(shippingOptionId) {
+          this.commerce.checkout.checkShippingOption(this.checkoutToken.id, {
+            shipping_option_id: shippingOptionId,
+            country: this.form.shipping.country,
+            region: this.form.shipping.stateProvince
+          }).then((shippingOption) => {
+            this.fulfillment.selectedShippingOption = shippingOption.id;
+            this.getLiveObject();
+          }).catch((error) => {
+            console.log('There was an error setting the shipping option', error);
+          })
+        },
+        setSelectedShippingOption() {
+          this.validateShippingOption(this.form.fulfillment.selectedShippingOption);
+        },
+        /**
+         * Emits order data to capture the order
+         */
         confirmOrder() {
             const orderData = {
                 line_items: this.checkoutToken.live.line_items,
@@ -201,6 +238,7 @@ export default {
                     }
                 }
             };
+            this.loading = true;
             this.$emit('confirm-order', this.checkoutToken.id, orderData);
         }
     }

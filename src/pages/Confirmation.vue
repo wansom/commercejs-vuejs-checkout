@@ -27,6 +27,7 @@ export default {
   methods: {
     backToHome() {
       this.$router.push('/');
+      this.$emit('back-to-home');
     }
   }
 }
@@ -34,20 +35,21 @@ export default {
 
 <style lang="scss">
 .confirmation {
-
   &__wrapper {
-    @apply text-center border-2 border-blue bg-white w-1/2 py-8 mt-20;
-    margin: 0 auto;
+    @apply text-center border-2 border-blue bg-white w-1/2 p-8 m-auto mt-20;
   }
 
   &__wrapper-message {
+    h4 {
+      @apply mt-1;
+    }
     span {
       @apply text-blue font-bold;
     }
   }
 
   &__wrapper-back {
-    @apply text-blue font-bold;
+    @apply text-blue font-bold mt-3;
 
     span {
       @apply pl-2;
