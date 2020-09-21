@@ -3,29 +3,29 @@
     <h2 class="checkout__heading">Checkout</h2>
     <div class="checkout__wrapper">
       <form class="checkout__form">
-          <h4 class="checkout__subheading">Customer Information</h4>
+          <h4 class="checkout__subheading">Customer information</h4>
 
-          <label class="checkout__label" for="firstName">First Name</label>
+          <label class="checkout__label" for="firstName">First name</label>
           <input class="checkout__input" type="text" v-model="form.customer.firstName" name="firstName" placeholder="Enter your first name" required />
 
-          <label class="checkout__label" for="lastName">Last Name</label>
+          <label class="checkout__label" for="lastName">Last name</label>
           <input class="checkout__input" type="text" v-model="form.customer.lastName" name="lastName" placeholder="Enter your last name" required />
 
             <label class="checkout__label" for="email">Email</label>
           <input class="checkout__input" type="text" v-model="form.customer.email" name="email" placeholder="Enter your email" required />
 
-          <h4 class="checkout__subheading">Shipping Details</h4>
+          <h4 class="checkout__subheading">Shipping details</h4>
 
-              <label class="checkout__label" for="fullname">Full Name</label>
+              <label class="checkout__label" for="fullname">Full name</label>
               <input class="checkout__input" type="text" v-model="form.shipping.name" name="name" placeholder="Enter your shipping full name" required />
 
-              <label class="checkout__label" for="street">Street Address</label>
+              <label class="checkout__label" for="street">Street address</label>
               <input class="checkout__input" type="text" v-model="form.shipping.street" name="street" placeholder="Enter your street address" required />
 
               <label class="checkout__label" for="city">City</label>
               <input class="checkout__input" type="text" v-model="form.shipping.city" name="city" placeholder="Enter your city" required />
 
-              <label class="checkout__label" for="postalZipCode">Postal/Zip Code</label>
+              <label class="checkout__label" for="postalZipCode">Postal/Zip code</label>
               <input class="checkout__input" type="text" v-model="form.shipping.postalZipCode" name="postalZipCode" placeholder="Enter your postal/zip code" required />
 
               <label class="checkout__label" for="country">Country</label>
@@ -34,38 +34,38 @@
                 <option v-for="(country, index) in countries" :value="index" :key="index">{{ country }}</option>
               </select>
 
-              <label class="checkout__label" for="stateProvince">State/Province</label>
+              <label class="checkout__label" for="stateProvince">State/province</label>
               <select v-model="form.shipping.stateProvince" name="stateProvince" class="checkout__select">
-                <option class="checkout__option" value="" disabled>State/Province</option>
+                <option class="checkout__option" value="" disabled>State/province</option>
                 <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
               </select>
 
-              <label class="checkout__label" for="selectedShippingOption">Shipping Method</label>
+              <label class="checkout__label" for="selectedShippingOption">Shipping method</label>
               <select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
                 <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
                 <option class="checkout__select-option" v-for="(method, index) in shippingOptions" :value="method.id" :key="index">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
               </select>
 
-          <h4 class="checkout__subheading">Payment Information</h4>
+          <h4 class="checkout__subheading">Payment information</h4>
 
-              <label class="checkout__label" for="cardNum">Credit Card Number</label>
+              <label class="checkout__label" for="cardNum">Credit card number</label>
               <input class="checkout__input" type="text" name="cardNum" v-model="form.payment.cardNum" placeholder="Enter your card number" />
 
-              <label class="checkout__label" for="expMonth">Expiry Month</label>
+              <label class="checkout__label" for="expMonth">Expiry month</label>
               <input class="checkout__input" type="text" name="expMonth" v-model="form.payment.expMonth" placeholder="Card expiry month" />
 
-              <label class="checkout__label" for="expYear">Expiry Year</label>
+              <label class="checkout__label" for="expYear">Expiry year</label>
               <input class="checkout__input" type="text" name="expYear" v-model="form.payment.expYear" placeholder="Card expiry year" />
 
               <label class="checkout__label" for="ccv">CCV</label>
               <input class="checkout__input" type="text" name="ccv" v-model="form.payment.ccv" placeholder="CCV (3 digits)" />
 
-          <button class="checkout__btn-confirm" @click.prevent="confirmOrder()">
+          <button type="button" class="checkout__btn-confirm" :disabled="loading" @click.prevent="confirmOrder">
             {{ loading ? 'Loading...' : 'Confirm Order' }}
           </button>
       </form>
       <div class="checkout__summary">
-        <h4>Order Summary</h4>
+        <h4>Order summary</h4>
           <div
             v-for="lineItem in cart.line_items"
             :key="lineItem.id"
@@ -154,6 +154,8 @@ export default {
         /**
          * Gets the live object
          * https://commercejs.com/docs/api/?javascript--cjs#get-the-live-object
+         *
+         * @param {string} checkoutTokenId
          */
         getLiveObject(checkoutTokenId) {
           this.$commerce.checkout.getLive(checkoutTokenId).then((liveObject) => {
@@ -166,7 +168,7 @@ export default {
          * Fetches a list of countries
          * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
          */
-        fetchAllCountries(){
+        fetchAllCountries() {
             this.$commerce.services.localeListCountries().then((countries) => {
                 this.countries = countries.countries
             }).catch((error) => {
@@ -178,7 +180,7 @@ export default {
          * can be shipped to for the current checkout
          * https://commercejs.com/docs/sdk/checkout#list-available-shipping-subdivisions
          */
-        fetchStateProvince(){
+        fetchStateProvince() {
             this.$commerce.services.localeListSubdivisions(this.form.shipping.country).then((resp) => {
                 this.shippingSubdivisions = resp.subdivisions
             }).catch((error) => {
@@ -188,8 +190,12 @@ export default {
         /**
          * Fetches the available shipping methods for the current checkout
          * https://commercejs.com/docs/sdk/checkout#get-shipping-methods
+         *
+         * @param {string} checkoutTokenId
+         * @param {string} country
+         * @param {string} stateProvince
          */
-        fetchShippingOptions(checkoutTokenId, country, stateProvince){
+        fetchShippingOptions(checkoutTokenId, country, stateProvince) {
           this.$commerce.checkout.getShippingOptions(checkoutTokenId,
             { country: country, region: stateProvince }).then((options) => {
               this.shippingOptions = options;
@@ -200,6 +206,8 @@ export default {
         /**
          * Checks and validates the shipping method
          * https://commercejs.com/docs/api/?javascript--cjs#check-shipping-method
+         *
+         * @param {string} shippingOptionId
          */
         validateShippingOption(shippingOptionId) {
           this.commerce.checkout.checkShippingOption(this.checkoutToken.id, {
