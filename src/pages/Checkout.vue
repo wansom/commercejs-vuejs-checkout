@@ -1,9 +1,13 @@
 <template>
   <div class="checkout">
-    <h2 class="checkout__heading">Checkout</h2>
+    <h2 class="checkout__heading">
+      Checkout
+    </h2>
     <div class="checkout__wrapper">
       <form class="checkout__form">
-          <h4 class="checkout__subheading">Customer information</h4>
+        <h4 class="checkout__subheading">
+          Customer information
+        </h4>
 
           <label class="checkout__label" for="firstName">First name</label>
           <input class="checkout__input" type="text" v-model="form.customer.firstName" name="firstName" placeholder="Enter your first name" required />
@@ -40,8 +44,8 @@
                 <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
               </select>
 
-              <label class="checkout__label" for="selectedShippingOption">Shipping method</label>
-              <select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
+              <label class="checkout__label" for="shippingOption">Shipping method</label>
+              <select v-model="form.fulfillment.shippingOption" name="shippingOption" class="checkout__select">
                 <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
                 <option class="checkout__select-option" v-for="(method, index) in shippingOptions" :value="method.id" :key="index">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
               </select>
@@ -91,7 +95,7 @@ import CartItem from '../components/CartItem';
 
 export default {
     name: 'Checkout',
-    props: ['checkoutToken', 'cart'],
+    props: ['checkoutToken', 'cart', 'loading'],
     components: {
       CartItem,
     },
@@ -112,7 +116,7 @@ export default {
                     country: 'US',
                 },
                 fulfillment: {
-                    selectedShippingOption: '',
+                    shippingOption: '',
                 },
                 payment: {
                     cardNum: '4242 4242 4242 4242',
@@ -122,33 +126,34 @@ export default {
                     billingPostalZipCode: '94107',
                 },
             },
-            loading: false,
             liveObject: {},
             countries: {},
             shippingSubdivisions: {},
             shippingOptions: [],
         }
     },
-    created() {
-        this.fetchAllCountries();
-        this.fetchStateProvince(this.form.shipping.country);
-    },
-    mounted() {
-        if(this.checkoutToken == null) {
-            return;
-        }
-        this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
-        this.getLiveObject(this.checkoutToken.id);
+    computed: {
+      selectedShippingOption() {
+        return this.form.fulfillment.shippingOption;
+      },
     },
     watch: {
-      setSelectedShippingOption() {
-        this.validateShippingOption(this.form.fulfillment.selectedShippingOption, this.form.shipping)
+      selectedShippingOption() {
+        this.validateShippingOption(this.form.fulfillment.shippingOption, this.form.shipping)
       }
     },
-    computed: {
-      setSelectedShippingOption() {
-        return this.form.fulfillment.selectedShippingOption;
-      },
+    created() {
+      this.fetchShippingCountries(this.checkoutToken.id);
+      this.fetchShippingSubdivisions(this.checkoutToken.id, this.form.shipping.country);
+    },
+    mounted() {
+      if(this.checkoutToken == null) {
+          return;
+      }
+      if (this.form.shipping.country) {
+        this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
+      }
+      this.getLiveObject(this.checkoutToken.id);
     },
     methods: {
         /**
@@ -165,11 +170,13 @@ export default {
           });
         },
         /**
-         * Fetches a list of countries
+         * Fetches a list of countries available to ship to checkout token
          * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
+         *
+         * @param {string} checkoutTokenId
          */
-        fetchAllCountries() {
-            this.$commerce.services.localeListCountries().then((countries) => {
+        fetchShippingCountries(checkoutTokenId) {
+            this.$commerce.services.localeListShippingCountries(checkoutTokenId).then((countries) => {
                 this.countries = countries.countries
             }).catch((error) => {
                 console.log('There was an error fetching a list of countries', error);
@@ -179,9 +186,12 @@ export default {
          * Fetches the subdivisions (provinces/states) in a country which
          * can be shipped to for the current checkout
          * https://commercejs.com/docs/sdk/checkout#list-available-shipping-subdivisions
+         *
+         * @param {string} checkoutTokenId
+         * @param {string} countryCode
          */
-        fetchStateProvince() {
-            this.$commerce.services.localeListSubdivisions(this.form.shipping.country).then((resp) => {
+        fetchShippingSubdivisions(checkoutTokenId, countryCode) {
+            this.$commerce.services.localeListShippingSubdivisions(checkoutTokenId, countryCode).then((resp) => {
                 this.shippingSubdivisions = resp.subdivisions
             }).catch((error) => {
                 console.log('There was an error fetching the subdivisions', error);
@@ -305,6 +315,10 @@ export default {
 
         &:hover {
             background-color: lighten(#292B83, 10);
+        }
+
+        &:disabled {
+          @apply cursor-not-allowed;
         }
     }
 

@@ -1,11 +1,12 @@
 {
   "name": "commercejs-vuejs-products",
   "version": "0.1.0",
-  "private": true,
+  "license": "BSD-3-Clause",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "lint-js": "eslint src/**/*.js"
   },
   "dependencies": {
     "@chec/commerce.js": "^2.1.1",

@@ -4,8 +4,8 @@
     <div v-if="cart.line_items.length">
       <CartItem
         v-for="lineItem in cart.line_items"
-        class="cart__inner"
         :key="lineItem.id"
+        class="cart__inner"
         :item="lineItem"
         @update-quantity="handleUpdateQuantity"
         @remove-from-cart="$emit('remove-from-cart', $event)"
@@ -26,7 +26,6 @@
       </button>
       <button
         v-if="cart.line_items.length"
-        type="button"
         class="cart__btn-checkout"
         @click="checkout"
       >

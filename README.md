@@ -682,7 +682,7 @@ When the promise resolves, the response will be stored into `this.shippingOption
 render a list of shipping options in our template.
 
 Our last checkout helper we will be adding before we start to hook up the data in our template will be the
-[`commerce.checkout.checkShippingOption()`](https://commercejs.com/docs/api/?javascript--cjs#check-shipping-method)
+[`commerce.checkout.checkShippingOption()`](https://commercejs.com/docs/sdk/checkout#check-shipping-method)
 method. This method helps to validate the shipping option selected for the provided checkout token and applies it to the
 live object to then send along with an order.
 

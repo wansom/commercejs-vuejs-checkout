@@ -8,11 +8,11 @@
         @click="toggleCart"
       >
         <button v-if="!isCartVisible" class="nav__cart-open">
-          <font-awesome-icon size="2x" icon="shopping-bag" color="#292B83"/>
+          <font-awesome-icon size="2x" icon="shopping-bag" color="#292B83" title="Click to view cart" />
           <span v-if="cart !== null">{{ cart.total_items }}</span>
         </button>
         <button class="nav__cart-close" v-else>
-          <font-awesome-icon size="1x" icon="times" color="white"/>
+          <font-awesome-icon size="1x" icon="times" color="white" title="Click to close cart" />
         </button>
       </div>
     </div>
@@ -30,6 +30,7 @@
       :products="products"
       :cart="cart"
       :checkout-token="checkoutToken"
+      :loading="loading"
       :order="order"
       @add-to-cart="handleAddToCart"
       @back-to-home="handleBackToHome"
@@ -43,11 +44,9 @@ import Cart from './components/Cart';
 import Hero from './components/Hero'
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faShoppingBag, faTimes } from '@fortawesome/free-solid-svg-icons';
-
 library.add(faShoppingBag, faTimes);
-
 export default {
-  name: 'app',
+  name: 'App',
   components: {
     Hero,
     Cart,
@@ -61,12 +60,8 @@ export default {
       isNavVisible: true,
       checkoutToken: null,
       order: null,
+      loading: false,
     };
-  },
-  created() {
-    this.fetchMerchantDetails();
-    this.fetchProducts();
-    this.fetchCart();
   },
   watch: {
     cart() {
@@ -74,6 +69,17 @@ export default {
         this.generateCheckoutToken();
       }
     },
+  },
+  created() {
+    this.fetchMerchantDetails();
+    this.fetchProducts();
+    this.fetchCart();
+  },
+  mounted() {
+    if (!this.order && window.sessionStorage.getItem('order_receipt')) {
+      console.log('order receipt saved')
+      this.order = JSON.parse(window.sessionStorage.getItem('order_receipt'));
+    }
   },
   methods: {
     fetchMerchantDetails() {
@@ -190,8 +196,9 @@ export default {
       this.$commerce.checkout.capture(checkoutTokenId, newOrder).then((order) => {
         this.refreshCart();
         this.order = order;
-        this.$router.push('/confirmation');
+        this.$router.push('/confirmation', { order });
         this.isNavVisible = false;
+        window.sessionStorage.setItem('order_receipt', JSON.stringify(order));
       }).catch((error) => {
           console.log('There was an error confirming your order', error);
       });
@@ -212,13 +219,11 @@ export default {
   top: 1rem;
   right: 1.25rem;
   z-index: 999;
-
   &__cart {
     span {
       @apply text-sm font-bold bg-orange text-white py-0 px-1 -ml-2 rounded-full align-top;
     }
   }
-
   &__cart-close {
     @apply bg-blue text-white py-0 px-1 -ml-2 -mt-3 -mr-3 rounded-full align-top h-8 w-8;
   }
