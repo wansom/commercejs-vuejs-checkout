@@ -143,16 +143,14 @@ export default {
       }
     },
     created() {
-      this.fetchShippingCountries(this.checkoutToken.id);
-      this.fetchShippingSubdivisions(this.checkoutToken.id, this.form.shipping.country);
+      this.fetchShippingCountries(this.checkoutToken.id)
+      this.fetchShippingSubdivisions(this.form.shipping.country);
     },
     mounted() {
       if(this.checkoutToken == null) {
           return;
       }
-      if (this.form.shipping.country) {
-        this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
-      }
+      this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
       this.getLiveObject(this.checkoutToken.id);
     },
     methods: {
@@ -190,8 +188,8 @@ export default {
          * @param {string} checkoutTokenId
          * @param {string} countryCode
          */
-        fetchShippingSubdivisions(checkoutTokenId, countryCode) {
-            this.$commerce.services.localeListShippingSubdivisions(checkoutTokenId, countryCode).then((resp) => {
+        fetchShippingSubdivisions(countryCode) {
+            this.$commerce.services.localeListSubdivisions(countryCode).then((resp) => {
                 this.shippingSubdivisions = resp.subdivisions
             }).catch((error) => {
                 console.log('There was an error fetching the subdivisions', error);
@@ -206,12 +204,12 @@ export default {
          * @param {string} stateProvince
          */
         fetchShippingOptions(checkoutTokenId, country, stateProvince) {
-          this.$commerce.checkout.getShippingOptions(checkoutTokenId,
-            { country: country, region: stateProvince }).then((options) => {
-              this.shippingOptions = options;
-            }).catch((error) => {
-              console.log('There was an error fetching the shipping methods', error);
-          });
+            this.$commerce.checkout.getShippingOptions(checkoutTokenId,
+              { country: country, region: stateProvince }).then((options) => {
+                this.shippingOptions = options;
+              }).catch((error) => {
+                console.log('There was an error fetching the shipping methods', error);
+            });
         },
         /**
          * Checks and validates the shipping method
@@ -225,7 +223,7 @@ export default {
             country: this.form.shipping.country,
             region: this.form.shipping.stateProvince
           }).then((resp) => {
-            this.fulfillment.selectedShippingOption = resp.id;
+            this.fulfillment.shippingOption = resp.id;
             this.liveObject = resp.live;
           }).catch((error) => {
             console.log('There was an error setting the shipping option', error);
@@ -251,7 +249,7 @@ export default {
                     country: this.form.shipping.country,
                 },
                 fulfillment: {
-                    shipping_method: this.form.fulfillment.selectedShippingOption
+                    shipping_method: this.form.fulfillment.shippingOption
                 },
                 payment: {
                     gateway: "test_gateway",

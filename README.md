@@ -395,7 +395,7 @@ export default {
           country: 'US',
         },
         fulfillment: {
-          selectedShippingOption: '',
+          shippingOption: '',
         },
         payment: {
           cardNum: '4242 4242 4242 4242',
@@ -612,21 +612,22 @@ Upon a successful call, an abbreviated response might look like the below JSON d
 We will be working with this response later when we update the selected shipping method. Next, let's start creating
 methods that will fetch a list of countries and subdivisions for a particular country.
 
-With a created function `fetchAllCountries()`, we will use
-[`commerce.services.localeListCountries()`](https://commercejs.com/docs/api/?javascript--cjs#list-all-countries) at `GET
-v1/services/locale/countries` to fetch and list all countries registered in the Chec Dashboard.
+With a created function `fetchShippingCountries()`, we will use
+[`commerce.services.localeListShippingCountries()`](https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries) at `GET v1/services/locale/{checkout_token_id}/countries` to fetch and list all countries available to ship to the checkout.
 
 ```js
 /**
- * Fetches a list of countries
+ * Fetches a list of countries available to ship to checkout token
  * https://commercejs.com/docs/sdk/checkout#list-available-shipping-countries
+ *
+ * @param {string} checkoutTokenId
  */
-fetchAllCountries(){
-    this.$commerce.services.localeListCountries().then((countries) => {
-        this.countries = countries.countries
-    }).catch((error) => {
-        console.log('There was an error fetching a list of countries', error);
-    });
+fetchShippingCountries(checkoutTokenId) {
+  this.$commerce.services.localeListShippingCountries(checkoutTokenId).then((countries) => {
+      this.countries = countries.countries
+  }).catch((error) => {
+      console.log('There was an error fetching a list of countries', error);
+  });
 },
 ```
 
@@ -643,13 +644,16 @@ to `GET v1/services/locale/{country_code}/subdivisions` to get a list of all sub
  * Fetches the subdivisions (provinces/states) in a country which
  * can be shipped to for the current checkout
  * https://commercejs.com/docs/sdk/checkout#list-available-shipping-subdivisions
+ *
+ * @param {string} checkoutTokenId
+ * @param {string} countryCode
  */
-fetchStateProvince(){
-    this.$commerce.services.localeListSubdivisions(this.form.shipping.country).then((resp) => {
-        this.shippingSubdivisions = resp.subdivisions
-    }).catch((error) => {
-        console.log('There was an error fetching the subdivisions', error);
-    });
+fetchShippingSubdivisions(checkoutTokenId, countryCode) {
+  this.$commerce.services.localeListShippingSubdivisions(checkoutTokenId, countryCode).then((resp) => {
+      this.shippingSubdivisions = resp.subdivisions
+  }).catch((error) => {
+      console.log('There was an error fetching the subdivisions', error);
+  });
 },
 ```
 
@@ -688,7 +692,7 @@ live object to then send along with an order.
 
 First, we create a function called `validateShippingOption()` and call the `commerce.checkout.checkShippingOption()`
 method. This function takes in the `checkoutToken.id`, and shipping details object with the `shippingOptionId`, the
-`country`, and the `region` data. When the promise resolves, we will update `fulfillment.selectedShippingOption` with the
+`country`, and the `region` data. When the promise resolves, we will update `fulfillment.shippingOption` with the
 `shippingOptionId` as well as the `liveObject` will be updated.
 
 ```js
@@ -702,7 +706,7 @@ validateShippingOption(shippingOptionId) {
     country: this.form.shipping.country,
     region: this.form.shipping.stateProvince
   }).then((resp) => {
-    this.fulfillment.selectedShippingOption = resp.id;
+    this.fulfillment.shippingOption = resp.id;
     this.liveObject = resp.live;
   }).catch((error) => {
     console.log('There was an error setting the shipping option', error);
@@ -821,13 +825,13 @@ mounted() {
 In the `mounted()` lifecycle hook, we first check that the `checkoutToken` exists before we call the `getLiveObject`
 with the `checkoutToken.id` passed in as an argument.
 
-Next, we will also call both the `fetchAllCountries()` and `fetchStateProvince()` functions when the component is created.
+Next, we will also call both the `fetchShippingCountries()` and `fetchShippingSubdivisions()` functions when the component is created.
 This ensures that we have our data ready to use when we render our select options in our template later.
 
 ```js
 created() {
-  this.fetchAllCountries();
-  this.fetchStateProvince(this.form.shipping.country);
+  this.fetchShippingCountries();
+  this.fetchShippingSubdivisions(this.form.shipping.country);
 },
 ```
 
@@ -840,8 +844,10 @@ mounted() {
   if (this.checkoutToken === null) {
       return;
   }
+  if (this.form.shipping.country) {
+    this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
+  }
   this.getLiveObject(this.checkoutToken.id);
-  this.fetchShippingOptions(this.checkoutToken.id, this.form.shipping.country, this.form.shipping.stateProvince);
 }
 ```
 
@@ -850,13 +856,13 @@ the selected shipping option.
 
 ```js
 watch: {
-  setSelectedShippingOption() {
-    this.validateShippingOption(this.form.fulfillment.selectedShippingOption, this.form.shipping)
+  selectedShippingOption() {
+    this.validateShippingOption(this.form.fulfillment.shippingOption, this.form.shipping)
   }
 },
 computed: {
-  setSelectedShippingOption() {
-    return this.form.fulfillment.selectedShippingOption;
+  selectedShippingOption() {
+    return this.form.fulfillment.shippingOption;
   },
 ```
 
@@ -876,8 +882,8 @@ created earlier on, place all the markup underneath the **Postal/Zip code** inpu
   <option v-for="(subdivision, index) in shippingSubdivisions" :value="index" :key="index">{{ subdivision }}</option>
 </select>
 
-<label class="checkout__label" for="selectedShippingOption">Shipping method</label>
-<select v-model="form.fulfillment.selectedShippingOption" name="selectedShippingOption" class="checkout__select">
+<label class="checkout__label" for="shippingOption">Shipping method</label>
+<select v-model="form.fulfillment.shippingOption" name="shippingOption" class="checkout__select">
   <option class="checkout__select-option" value="" disabled>Select a shipping method</option>
   <option class="checkout__select-option" v-for="(method, index) in shippingOptions" :value="method.id" :key="index">{{ `${method.description} - $${method.price.formatted_with_code}` }}</option>
 </select>
@@ -887,7 +893,7 @@ The three fields we just added:
   as options
 - Binds the `form.shipping.stateProvince` as the selected state/province and iterates through the `countries` object to display
   the available list of countries
-- Binds the `form.fulfillment.selectedShippingOption` and loops through the `shippingOptions` array to render as options
+- Binds the `form.fulfillment.shippingOption` and loops through the `shippingOptions` array to render as options
   in the **Shipping method** field.
 
 Once all the data is bound to the field we are then able to collect the necessary data to convert the checkout into an order object.
@@ -918,7 +924,7 @@ confirmOrder() {
       country: this.form.shipping.country,
     },
     fulfillment: {
-      shipping_method: this.form.fulfillment.selectedShippingOption
+      shipping_method: this.form.fulfillment.shippingOption
     },
     payment: {
       gateway: "test_gateway",
@@ -1034,6 +1040,7 @@ export default {
   methods: {
     backToHome() {
       this.$router.push('/');
+      // For setting nav back to visible
       this.$emit('back-to-home');
     }
   }
@@ -1081,7 +1088,7 @@ instance:
 />
 ```
 We attached a `handleBackToHome` function to set our cart navigation back to true. We have left the cart navigation UI
-detail out of this tutorial.
+details out of this tutorial.
 
 ## That's it!
 
