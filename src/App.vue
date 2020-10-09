@@ -143,7 +143,6 @@ export default {
      * https://commercejs.com/docs/sdk/cart/#remove-from-cart
      *
      * @param {string} lineItemId ID of the line item being removed
-     *
      */
     handleRemoveFromCart(lineItemId) {
       this.$commerce.cart.remove(lineItemId).then((resp) => {

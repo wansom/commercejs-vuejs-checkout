@@ -38,6 +38,7 @@ This project assumes you have some knowledge of the below concepts before starti
   therefore, we will not be going over any styling details
 - We will not be going over any Font Awesome usage
 - We will not be going over any UI details that do not pertain much to Commerce.js methods
+- We will not go over props type checking using `PropTypes`
 
 ## Checkout
 
@@ -45,7 +46,7 @@ This project assumes you have some knowledge of the below concepts before starti
 
 For fully functional SPAs (single page applications) to scale, you will need to add routing in order to navigate to various view
 pages such to a cart or checkout flow. Let's jump right back to where we left off from the previous cart guide and add
-[VueRouter](https://router.vuejs.org/), the official routing library for Vue applications, to our project.
+[react-router](https://router.vuejs.org/), the official routing library for Vue applications, to our project.
 
 ```bash
 yarn add vue-router
@@ -183,145 +184,147 @@ data:
 
 ```json
 {
-  "id": "chkt_J5aYJ8zBG7dM95",
-  "cart_id": "cart_ywMy2OE8zO7Dbw",
-  "created": 1600411250,
-  "expires": 1601016050,
-  "analytics": {
-    "google": {
-      "settings": {
-        "tracking_id": null,
-        "linked_domains": null
-      }
-    }
+  "id": "chkt_3l8XzLNjjR9WOl",
+  "cart_id": "cart_nldQ8kbzy3QgMw",
+  "created": 1602265312,
+  "expires": 1602870112,
+  "conditionals": {
+    "collects_fullname": false,
+    "collects_shipping_address": true,
+    "collects_billing_address": false,
+    "has_physical_delivery": true,
+    "has_digital_delivery": true,
+    "has_pay_what_you_want": false,
+    "has_available_discounts": true,
+    "collects_extrafields": false,
+    "is_cart_free": false
   },
-  "line_items": [
+  "has": {
+    "physical_delivery": true,
+    "digital_delivery": true,
+    "pay_what_you_want": false,
+    "available_discounts": true
+  },
+  "is": {
+    "cart_free": false
+  },
+  "products": [
     {
-      "id": "item_7RyWOwmK5nEa2V",
-      "product_id": "prod_NqKE50BR4wdgBL",
+      "id": "prod_NqKE50BR4wdgBL",
+      "created": 1594075580,
+      "last_updated": 1600635997,
+      "active": true,
+      "permalink": "TSUTww",
       "name": "Kettle",
-      "image": "https://cdn.chec.io/merchants/18462/images/676785cedc85f69ab27c42c307af5dec30120ab75f03a9889ab29|u9 1.png",
-      "sku": null,
       "description": "<p>Black stove-top kettle</p>",
-      "quantity": 1,
       "price": {
         "raw": 45.5,
         "formatted": "45.50",
         "formatted_with_symbol": "$45.50",
         "formatted_with_code": "45.50 USD"
       },
-      "subtotal": {
-        "raw": 45.5,
-        "formatted": "45.50",
-        "formatted_with_symbol": "$45.50",
-        "formatted_with_code": "45.50 USD"
+      "quantity": 0,
+      "media": {
+        "type": "image",
+        "source": "https://cdn.chec.io/merchants/18462/images/676785cedc85f69ab27c42c307af5dec30120ab75f03a9889ab29|u9 1.png"
       },
+      "sku": null,
+      "sort_order": 0,
+      "seo": {
+        "title": null,
+        "description": null
+      },
+      "is": {
+        "active": true,
+        "free": false,
+        "tax_exempt": false,
+        "pay_what_you_want": false,
+        "quantity_limited": false,
+        "sold_out": false
+      },
+      "has": {
+        "digital_delivery": false,
+        "physical_delivery": true,
+        "images": true,
+        "video": false,
+        "rich_embed": false
+      },
+      "checkout_url": {
+        "checkout": "https://checkout.chec.io/TSUTww?checkout=true",
+        "display": "https://checkout.chec.io/TSUTww"
+      },
+      "extrafields": [],
       "variants": [],
-      "conditionals": {
-        "is_active": true,
-        "is_free": false,
-        "is_tax_exempt": false,
-        "is_pay_what_you_want": false,
-        "is_quantity_limited": false,
-        "is_sold_out": false,
-        "has_digital_delivery": false,
-        "has_physical_delivery": false,
-        "has_images": true,
-        "has_video": false,
-        "has_rich_embed": false,
-        "collects_fullname": false,
-        "collects_shipping_address": false,
-        "collects_billing_address": false,
-        "collects_extrafields": false
-      },
-    }
+      "categories": [
+        {
+          "id": "cat_3zkK6oLvVlXn0Q",
+          "slug": "office",
+          "name": "Home office"
+        }
+      ],
+      "assets": [
+        {
+          "id": "ast_7ZAMo1Mp7oNJ4x",
+          "url": "https://cdn.chec.io/merchants/18462/images/676785cedc85f69ab27c42c307af5dec30120ab75f03a9889ab29|u9 1.png",
+          "is_image": true,
+          "filename": "",
+          "file_size": null,
+          "file_extension": "",
+          "meta": [],
+          "created_at": 1594075541,
+          "updated_at": 1594075541
+        }
+      ],
+      "related_products": []
+    },
   ],
-  "shipping_methods": [],
+  "gateways": {
+    "available": {
+      "test_gateway": true,
+      "stripe": false,
+      "square": false,
+      "paypal": false,
+      "paymill": false,
+      "razorpay": false,
+      "manual": false
+    },
+    "available_count": 1,
+    "test_gateway": {
+      "type": "card",
+      "settings": []
+    }
+  },
+  "shipping_methods": [
+    {
+      "id": "ship_kpnNwAjO9omXB3",
+      "description": "US",
+      "price": {
+        "raw": 5,
+        "formatted": "5.00",
+        "formatted_with_symbol": "$5.00",
+        "formatted_with_code": "5.00 USD"
+      },
+      "countries": [
+        "US"
+      ],
+      "regions": {
+        "US": [
+          "US-AL",
+        ]
+      }
+    },
+  ],
   "live": {
     "merchant_id": 18462,
     "currency": {
       "code": "USD",
       "symbol": "$"
     },
-    "line_items": [
-      {
-        "id": "item_7RyWOwmK5nEa2V",
-        "product_id": "prod_NqKE50BR4wdgBL",
-        "product_name": "Kettle",
-        "type": "standard",
-        "sku": null,
-        "quantity": 1,
-        "price": {
-          "raw": 45.5,
-          "formatted": "45.50",
-          "formatted_with_symbol": "$45.50",
-          "formatted_with_code": "45.50 USD"
-        },
-        "line_total": {
-          "raw": 45.5,
-          "formatted": "45.50",
-          "formatted_with_symbol": "$45.50",
-          "formatted_with_code": "45.50 USD"
-        },
-        "variants": [],
-        "tax": {
-          "is_taxable": false,
-          "taxable_amount": null,
-          "amount": null,
-          "breakdown": null
-        }
-      },
-      {
-        "id": "item_1ypbroE658n4ea",
-        "product_id": "prod_kpnNwAMNZwmXB3",
-        "product_name": "Book",
-        "type": "standard",
-        "sku": null,
-        "quantity": 1,
-        "price": {
-          "raw": 13.5,
-          "formatted": "13.50",
-          "formatted_with_symbol": "$13.50",
-          "formatted_with_code": "13.50 USD"
-        },
-        "line_total": {
-          "raw": 13.5,
-          "formatted": "13.50",
-          "formatted_with_symbol": "$13.50",
-          "formatted_with_code": "13.50 USD"
-        },
-        "variants": [],
-        "tax": {
-          "is_taxable": false,
-          "taxable_amount": null,
-          "amount": null,
-          "breakdown": null
-        }
-      }
-    ],
     "subtotal": {
       "raw": 59,
       "formatted": "59.00",
       "formatted_with_symbol": "$59.00",
       "formatted_with_code": "59.00 USD"
-    },
-    "discount": [],
-    "shipping": {
-      "available_options": [],
-      "price": {
-        "raw": 0,
-        "formatted": "0.00",
-        "formatted_with_symbol": "$0.00",
-        "formatted_with_code": "0.00 USD"
-      }
-    },
-    "tax": {
-      "amount": {
-        "raw": 0,
-        "formatted": "0.00",
-        "formatted_with_symbol": "$0.00",
-        "formatted_with_code": "0.00 USD"
-      }
     },
     "total": {
       "raw": 59,
@@ -335,20 +338,47 @@ data:
       "formatted_with_symbol": "$59.00",
       "formatted_with_code": "59.00 USD"
     },
-    "giftcard": [],
     "total_due": {
       "raw": 59,
       "formatted": "59.00",
       "formatted_with_symbol": "$59.00",
       "formatted_with_code": "59.00 USD"
     },
-    "pay_what_you_want": {
-      "enabled": false,
-      "minimum": null,
-      "customer_set_price": null
-    },
-    "future_charges": []
-  }
+    "line_items": [
+      {
+        "id": "item_7RyWOwmK5nEa2V",
+        "product_id": "prod_NqKE50BR4wdgBL",
+        "name": "Kettle",
+        "product_name": "Kettle",
+        "media": {
+          "type": "image",
+          "source": "https://cdn.chec.io/merchants/18462/images/676785cedc85f69ab27c42c307af5dec30120ab75f03a9889ab29|u9 1.png"
+        },
+        "sku": null,
+        "quantity": 1,
+        "price": {
+          "raw": 45.5,
+          "formatted": "45.50",
+          "formatted_with_symbol": "$45.50",
+          "formatted_with_code": "45.50 USD"
+        },
+        "line_total": {
+          "raw": 45.5,
+          "formatted": "45.50",
+          "formatted_with_symbol": "$45.50",
+          "formatted_with_code": "45.50 USD"
+        },
+        "type": "standard",
+        "tax": {
+          "is_taxable": false,
+          "taxable_amount": null,
+          "amount": null,
+          "breakdown": null
+        },
+        "variants": []
+      },
+    ],
+  },
 }
 ```
 With the verbose data that the `generateCheckoutToken()` returns, we now have a checkout token object which contains
